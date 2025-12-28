@@ -1,5 +1,4 @@
-export type Phase = 0 | 1 | 3; // 0=DC, 1=single-phase, 3=three-phase
-
+export type Phase = 0 | 1 | 3;
 export type BlockType = "A" | "B" | "C";
 
 export type PortRole = "power_in" | "power_out" | "pass_through";
@@ -55,7 +54,6 @@ export type BlockBase<TType extends BlockType, TRating> = {
 export type BlockA = BlockBase<"A", RatingA>;
 export type BlockB = BlockBase<"B", RatingB>;
 export type BlockC = BlockBase<"C", RatingC>;
-
 export type Block = BlockA | BlockB | BlockC;
 
 export type NetKind = "AC" | "DC" | "SIGNAL";
@@ -66,11 +64,11 @@ export type Net = {
   voltage: number;
   phase: Phase;
   label: string;
-  tolerance?: number; // percent (0-100)
+  tolerance?: number; // percent
 };
 
 export type Connection = {
-  from: `${string}:${string}`; // BlockID:PortID
+  from: `${string}:${string}`;
   to: `${string}:${string}`;
   net: string | null;
   label?: string;
@@ -81,7 +79,7 @@ export type LayoutBlock = {
   y: number;
   w: number;
   h: number;
-  rotation?: number; // default 0
+  rotation?: number;
 };
 
 export type LayoutEdge = {
@@ -96,8 +94,8 @@ export type Layout = {
 
 export type ProjectMeta = {
   title: string;
-  created_at: string; // ISO8601
-  updated_at: string; // ISO8601
+  created_at: string;
+  updated_at: string;
   author: string;
   description?: string;
 };
