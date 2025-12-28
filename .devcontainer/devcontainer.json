@@ -1,0 +1,34 @@
+{
+  "name": "Power Block Diagram Editor Dev",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
+
+  "remoteUser": "node",
+  "updateRemoteUserUID": true,
+
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+
+  "forwardPorts": [5173],
+  "portsAttributes": {
+    "5173": {
+      "label": "Vite dev server",
+      "onAutoForward": "openBrowser"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker",
+        "openai.chatgpt"
+      ],
+      "settings": {
+        "editor.formatOnSave": true
+      }
+    }
+  },
+
+  "postCreateCommand": "npm ci"
+}
