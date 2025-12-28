@@ -9,6 +9,7 @@
 - アーキテクチャ: `docs/architecture.md`
 - UI ガイド: `docs/ui.md`
 - ADR: `docs/adr/`
+- テストガイド: `docs/testing.md`
 - コントリビューション: `CONTRIBUTING.md`
 
 ## 開発環境（推奨）
