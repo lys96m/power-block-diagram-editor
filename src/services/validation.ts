@@ -1,4 +1,11 @@
-import type { Block, BlockB, BlockC, Net, ValidationLevel, ValidationResult } from "../types/diagram";
+import type {
+  Block,
+  BlockB,
+  BlockC,
+  Net,
+  ValidationLevel,
+  ValidationResult,
+} from "../types/diagram";
 
 const issue = (level: ValidationLevel, message: string, targetId?: string): ValidationResult => ({
   id: `${level}-${targetId ?? "global"}-${message}`.replace(/\s+/g, "-"),
@@ -12,7 +19,11 @@ const isToleranceValid = (tolerance?: number): boolean => {
   return tolerance >= 0 && tolerance <= 100;
 };
 
-export const isVoltageWithinTolerance = (netVoltage: number, required: number, tolerancePercent?: number): boolean => {
+export const isVoltageWithinTolerance = (
+  netVoltage: number,
+  required: number,
+  tolerancePercent?: number,
+): boolean => {
   const tolerance = tolerancePercent ?? 0;
   if (!isToleranceValid(tolerance)) return false;
   const delta = Math.abs(netVoltage - required);
@@ -25,7 +36,9 @@ const validateVoltage = (net: Net, required: number): ValidationResult[] => {
     return [issue("error", "Net tolerance must be within 0-100%", net.id)];
   }
   const within = isVoltageWithinTolerance(net.voltage, required, net.tolerance);
-  return within ? [] : [issue("error", `Voltage mismatch: net=${net.voltage}V required=${required}V`, net.id)];
+  return within
+    ? []
+    : [issue("error", `Voltage mismatch: net=${net.voltage}V required=${required}V`, net.id)];
 };
 
 const validatePhase = (net: Net, required: number): ValidationResult[] => {
@@ -35,7 +48,10 @@ const validatePhase = (net: Net, required: number): ValidationResult[] => {
   return [];
 };
 
-const validateTypeBLoad = (block: BlockB, net: Net): { issues: ValidationResult[]; current?: number } => {
+const validateTypeBLoad = (
+  block: BlockB,
+  net: Net,
+): { issues: ValidationResult[]; current?: number } => {
   const issues: ValidationResult[] = [];
   issues.push(...validateVoltage(net, block.rating.V_in));
   issues.push(...validatePhase(net, block.rating.phase));
