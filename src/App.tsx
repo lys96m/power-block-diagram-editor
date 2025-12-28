@@ -1,31 +1,93 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import AppBar from "@mui/material/AppBar";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
 import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0);
+const actions = ["New", "Open", "Save", "Export", "Undo", "Redo"];
 
+function App() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>count is {count}</button>
-        <button onClick={() => setCount((count) => count + 1)}>count is {count}</button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">Click on the Vite and React logos to learn more</p>
-    </>
+    <Box className="app-root">
+      <AppBar position="static" className="app-bar" elevation={1}>
+        <Toolbar className="toolbar" variant="dense">
+          <Typography variant="h6" component="div">
+            Power Block Diagram Editor
+          </Typography>
+          <Stack direction="row" spacing={1}>
+            {actions.map((label) => (
+              <Button key={label} color="inherit" size="small" variant="text">
+                {label}
+              </Button>
+            ))}
+          </Stack>
+        </Toolbar>
+      </AppBar>
+
+      <Box className="app-body">
+        <Box className="panel left-panel">
+          <Typography variant="subtitle1" fontWeight={600}>
+            Palette
+          </Typography>
+          <Divider />
+          <Stack spacing={1} mt={2}>
+            <Button variant="contained" size="small" fullWidth>
+              Add Type A
+            </Button>
+            <Button variant="contained" size="small" fullWidth>
+              Add Type B
+            </Button>
+            <Button variant="contained" size="small" fullWidth>
+              Add Type C
+            </Button>
+          </Stack>
+        </Box>
+
+        <Box className="canvas-area">
+          <Paper variant="outlined" className="canvas-placeholder">
+            <Typography variant="subtitle1" fontWeight={600}>
+              Canvas
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              React Flow will render here
+            </Typography>
+          </Paper>
+        </Box>
+
+        <Box className="panel right-panel">
+          <Typography variant="subtitle1" fontWeight={600}>
+            Properties
+          </Typography>
+          <Divider />
+          <Stack spacing={1} mt={2}>
+            <Typography variant="body2" color="text.secondary">
+              Nothing selected
+            </Typography>
+          </Stack>
+
+          <Divider sx={{ my: 2 }} />
+          <Typography variant="subtitle1" fontWeight={600}>
+            Validation
+          </Typography>
+          <Stack spacing={0.5} mt={1}>
+            <Typography variant="body2">Errors: 0</Typography>
+            <Typography variant="body2">Warnings: 0</Typography>
+            <Typography variant="body2">Uncertain loads: 0</Typography>
+          </Stack>
+        </Box>
+      </Box>
+
+      <Box className="status-bar">
+        <Typography variant="body2">Status: Ready</Typography>
+        <Typography variant="body2" color="text.secondary">
+          Nets: 0 | Errors: 0 | Warnings: 0 | Unassigned nets: 0 | Uncertain loads: 0
+        </Typography>
+      </Box>
+    </Box>
   );
 }
 
