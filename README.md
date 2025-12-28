@@ -5,6 +5,7 @@
 ---
 
 ## ドキュメント
+
 - 仕様ドラフト: `docs/spec.md`
 - アーキテクチャ: `docs/architecture.md`
 - UI ガイド: `docs/ui.md`
