@@ -5,11 +5,36 @@ import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import { Background, Controls, ReactFlow, addEdge, useEdgesState, useNodesState } from "reactflow";
+import {
+  Background,
+  ConnectionLineType,
+  Controls,
+  ReactFlow,
+  addEdge,
+  useEdgesState,
+  useNodesState,
+  BaseEdge,
+  getSmoothStepPath,
+} from "reactflow";
+import type { Edge, EdgeProps } from "reactflow";
 import "./App.css";
 import "reactflow/dist/style.css";
 
 const actions = ["New", "Open", "Save", "Export", "Undo", "Redo"];
+
+const SmoothEdge = (props: EdgeProps) => {
+  const [path] = getSmoothStepPath({
+    sourceX: props.sourceX,
+    sourceY: props.sourceY,
+    sourcePosition: props.sourcePosition,
+    targetX: props.targetX,
+    targetY: props.targetY,
+    targetPosition: props.targetPosition,
+    borderRadius: 8,
+  });
+
+  return <BaseEdge {...props} path={path} />;
+};
 
 function App() {
   const initialNodes = [
@@ -18,13 +43,43 @@ function App() {
     { id: "load", position: { x: 750, y: 120 }, data: { label: "Load (Type B)" } },
   ];
 
-  const initialEdges = [
-    { id: "e1-2", source: "source", target: "breaker" },
-    { id: "e2-3", source: "breaker", target: "load" },
+  const initialEdges: Edge[] = [
+    { id: "e1-2", source: "source", target: "breaker", type: "smooth" },
+    { id: "e2-3", source: "breaker", target: "load", type: "smooth" },
   ];
 
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  const edgeTypes = { smooth: SmoothEdge };
+
+  const hasPath = (graphEdges: Edge[], start: string, goal: string): boolean => {
+    const visited = new Set<string>();
+    const stack = [start];
+    const adjacency = graphEdges.reduce<Map<string, string[]>>((map, e) => {
+      const list = map.get(e.source) ?? [];
+      list.push(e.target);
+      map.set(e.source, list);
+      return map;
+    }, new Map());
+
+    while (stack.length > 0) {
+      const node = stack.pop();
+      if (!node || visited.has(node)) continue;
+      if (node === goal) return true;
+      visited.add(node);
+      const neighbors = adjacency.get(node) ?? [];
+      neighbors.forEach((n) => stack.push(n));
+    }
+    return false;
+  };
+
+  const wouldCreateCycle = (existing: Edge[], source?: string | null, target?: string | null): boolean => {
+    if (!source || !target) return true;
+    if (source === target) return true;
+    const candidate: Edge = { id: "temp", source, target };
+    return hasPath([...existing, candidate], target, source);
+  };
 
   return (
     <Box className="app-root">
@@ -68,7 +123,16 @@ function App() {
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            onConnect={(connection) => setEdges((eds) => addEdge(connection, eds))}
+            onConnect={(connection) =>
+              setEdges((eds) => {
+                if (wouldCreateCycle(eds, connection.source, connection.target)) {
+                  return eds;
+                }
+                return addEdge({ ...connection, type: "smooth" }, eds);
+              })
+            }
+            edgeTypes={edgeTypes}
+            connectionLineType={ConnectionLineType.SmoothStep}
             snapToGrid
             snapGrid={[16, 16]}
             fitView
