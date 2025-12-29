@@ -19,7 +19,15 @@ type Props = {
   onCopy: () => void;
 };
 
-export const ProjectDialog = ({ mode, text, error, onChangeText, onClose, onLoad, onCopy }: Props) => {
+export const ProjectDialog = ({
+  mode,
+  text,
+  error,
+  onChangeText,
+  onClose,
+  onLoad,
+  onCopy,
+}: Props) => {
   const title =
     mode === "open"
       ? "Open project (JSON)"
