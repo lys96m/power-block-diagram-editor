@@ -17,6 +17,8 @@ import type { Edge, EdgeProps } from "reactflow";
 import { useMemo, useState } from "react";
 import TextField from "@mui/material/TextField";
 import { useDiagramState } from "./state/DiagramState";
+import type { ValidationResult, Block, Net, RatingA, RatingB } from "./types/diagram";
+import { validateBlockOnNet } from "./services/validation";
 import "./App.css";
 import "reactflow/dist/style.css";
 
@@ -34,6 +36,15 @@ const SmoothEdge = (props: EdgeProps) => {
   });
 
   return <BaseEdge {...props} path={path} />;
+};
+
+const defaultNet: Net = {
+  id: "net-ac200",
+  kind: "AC",
+  voltage: 200,
+  phase: 1,
+  label: "AC200V",
+  tolerance: 10,
 };
 
 function App() {
@@ -97,10 +108,46 @@ function App() {
   };
 
   const handleNodeLabelChange = (value: string) => {
+    if (!selectedNodeId) return;
     setNodes((prev) =>
       prev.map((n) =>
         n.id === selectedNodeId ? { ...n, data: { ...(n.data ?? {}), label: value } } : n,
       ),
+    );
+  };
+
+  const handleNodeTypeChange = (value: Block["type"]) => {
+    if (!selectedNodeId) return;
+    setNodes((prev) =>
+      prev.map((n) =>
+        n.id === selectedNodeId ? { ...n, data: { ...(n.data ?? {}), type: value } } : n,
+      ),
+    );
+  };
+
+  const handleRatingChange = (field: string, value: number | undefined) => {
+    if (!selectedNodeId) return;
+    if (value === undefined || Number.isNaN(value) || value < 0.01) {
+      setNodes((prev) =>
+        prev.map((n) => {
+          if (n.id !== selectedNodeId) return n;
+          const data = (n.data ?? {}) as NodeData;
+          const nextRating = { ...(data.rating ?? {}) } as Record<string, number>;
+          delete nextRating[field];
+          return { ...n, data: { ...data, rating: nextRating } };
+        }),
+      );
+      return;
+    }
+    const rounded = Math.round(value * 100) / 100;
+    setNodes((prev) =>
+      prev.map((n) => {
+        if (n.id !== selectedNodeId) return n;
+        const data = (n.data ?? {}) as NodeData;
+        const nextRating = { ...(data.rating ?? {}) } as Record<string, number>;
+        nextRating[field] = rounded;
+        return { ...n, data: { ...data, rating: nextRating } };
+      }),
     );
   };
 
@@ -113,8 +160,38 @@ function App() {
     setSelectedEdgeId(null);
   };
 
-  const errors = 0;
-  const warnings = 0;
+  type NodeData = { type?: Block["type"]; label?: string; rating?: Block["rating"] };
+
+  const validationResults = useMemo(() => {
+    const results: ValidationResult[] = [];
+    nodes.forEach((node) => {
+      const data = (node.data ?? {}) as NodeData;
+      const type = data.type;
+      const rating = data.rating;
+      if (!type || !rating) {
+        results.push({
+          id: `warn-${node.id}-missing-type`,
+          level: "warn",
+          message: "Missing type or rating",
+          targetId: node.id,
+        });
+        return;
+      }
+      const block: Block = {
+        id: node.id,
+        type,
+        name: data.label ?? node.id,
+        rating,
+        ports: [],
+      } as Block;
+      const { issues } = validateBlockOnNet(block, defaultNet);
+      results.push(...issues);
+    });
+    return results;
+  }, [nodes]);
+
+  const errors = validationResults.filter((r) => r.level === "error").length;
+  const warnings = validationResults.filter((r) => r.level === "warn").length;
 
   return (
     <Box className="app-root">
@@ -188,8 +265,50 @@ function App() {
                 <TextField
                   size="small"
                   label="Label"
-                  value={selectedNode.data?.label ?? ""}
+                  value={(selectedNode.data as NodeData)?.label ?? ""}
                   onChange={(e) => handleNodeLabelChange(e.target.value)}
+                />
+                <TextField
+                  size="small"
+                  label="Type"
+                  value={(selectedNode.data as NodeData)?.type ?? ""}
+                  onChange={(e) => handleNodeTypeChange(e.target.value as Block["type"])}
+                />
+                <TextField
+                  size="small"
+                  label="Rating: V (V)"
+                  type="number"
+                  inputProps={{ step: 1, min: 0, inputMode: "decimal" }}
+                  helperText="Spinner ±1, decimal up to 0.01"
+                  value={
+                    ((selectedNode.data as NodeData)?.rating as Partial<RatingB & RatingA>)?.V_in ??
+                    ((selectedNode.data as NodeData)?.rating as Partial<RatingA>)?.V_max ??
+                    ""
+                  }
+                  onChange={(e) =>
+                    handleRatingChange(
+                      "V_in",
+                      e.target.value === "" ? undefined : Number(e.target.value),
+                    )
+                  }
+                />
+                <TextField
+                  size="small"
+                  label="Rating: I (A)"
+                  type="number"
+                  inputProps={{ step: 1, min: 0, inputMode: "decimal" }}
+                  helperText="Spinner ±1, decimal up to 0.01"
+                  value={
+                    ((selectedNode.data as NodeData)?.rating as Partial<RatingB & RatingA>)?.I_in ??
+                    ((selectedNode.data as NodeData)?.rating as Partial<RatingA>)?.I_max ??
+                    ""
+                  }
+                  onChange={(e) =>
+                    handleRatingChange(
+                      "I_in",
+                      e.target.value === "" ? undefined : Number(e.target.value),
+                    )
+                  }
                 />
               </>
             )}

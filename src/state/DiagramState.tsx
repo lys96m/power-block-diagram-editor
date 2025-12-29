@@ -20,14 +20,34 @@ type DiagramState = {
   onConnect: OnConnect;
   addNode: (kind: "A" | "B" | "C") => void;
   deleteItems: (nodeIds: string[], edgeIds: string[]) => void;
+  updateNodeData: (nodeId: string, data: Partial<Node["data"]>) => void;
 };
 
 const DiagramStateContext = createContext<DiagramState | null>(null);
 
 const initialNodes: Node[] = [
-  { id: "source", position: { x: 150, y: 120 }, data: { label: "Power Source (Type C)" } },
-  { id: "breaker", position: { x: 450, y: 120 }, data: { label: "Breaker (Type A)" } },
-  { id: "load", position: { x: 750, y: 120 }, data: { label: "Load (Type B)" } },
+  {
+    id: "source",
+    position: { x: 150, y: 120 },
+    data: {
+      label: "Power Source (Type C)",
+      type: "C",
+      rating: {
+        in: { V_in: 200, phase_in: 1 },
+        out: { V_out: 24, phase_out: 0 },
+      },
+    },
+  },
+  {
+    id: "breaker",
+    position: { x: 450, y: 120 },
+    data: { label: "Breaker (Type A)", type: "A", rating: { V_max: 250, I_max: 20, phase: 1 } },
+  },
+  {
+    id: "load",
+    position: { x: 750, y: 120 },
+    data: { label: "Load (Type B)", type: "B", rating: { V_in: 200, phase: 1, I_in: 5 } },
+  },
 ];
 
 const initialEdges: Edge[] = [
@@ -52,10 +72,19 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
       B: "Type B",
       C: "Type C",
     };
+    const ratingMap: Record<"A" | "B" | "C", Node["data"]> = {
+      A: { rating: { V_max: 250, I_max: 20, phase: 1 } },
+      B: { rating: { V_in: 200, phase: 1, I_in: 5 } },
+      C: { rating: { in: { V_in: 200, phase_in: 1 }, out: { V_out: 24, phase_out: 0 } } },
+    };
     const newNode: Node = {
       id,
       position: { x: 200 + offset, y: 200 + offset },
-      data: { label: `${labelMap[kind]} ${nodeCounter.current}` },
+      data: {
+        label: `${labelMap[kind]} ${nodeCounter.current}`,
+        type: kind,
+        ...(ratingMap[kind] ?? {}),
+      },
     };
     setNodes((prev) => [...prev, newNode]);
   };
@@ -72,6 +101,12 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
     setNodes((prev) => prev.filter((n) => !nodeIds.includes(n.id)));
   };
 
+  const updateNodeData = (nodeId: string, data: Partial<Node["data"]>) => {
+    setNodes((prev) =>
+      prev.map((n) => (n.id === nodeId ? { ...n, data: { ...(n.data ?? {}), ...data } } : n)),
+    );
+  };
+
   return (
     <DiagramStateContext.Provider
       value={{
@@ -84,6 +119,7 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
         onConnect,
         addNode,
         deleteItems,
+        updateNodeData,
       }}
     >
       {children}
