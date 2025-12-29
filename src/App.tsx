@@ -74,7 +74,11 @@ function App() {
     return false;
   };
 
-  const wouldCreateCycle = (existing: Edge[], source?: string | null, target?: string | null): boolean => {
+  const wouldCreateCycle = (
+    existing: Edge[],
+    source?: string | null,
+    target?: string | null,
+  ): boolean => {
     if (!source || !target) return true;
     if (source === target) return true;
     const candidate: Edge = { id: "temp", source, target };
