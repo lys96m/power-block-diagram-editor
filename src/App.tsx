@@ -26,6 +26,7 @@ import type {
   RatingA,
   RatingB,
   RatingC,
+  Phase,
 } from "./types/diagram";
 import { validateBlockOnNet } from "./services/validation";
 import "./App.css";
@@ -161,16 +162,21 @@ function App() {
     );
   };
 
-  const toNumberOrUndefined = (value: string): number | undefined => {
-    if (value === "") return undefined;
-    const num = Number(value);
-    return Number.isNaN(num) ? undefined : Math.round(num * 100) / 100;
-  };
+const toNumberOrUndefined = (value: string): number | undefined => {
+  if (value === "") return undefined;
+  const num = Number(value);
+  return Number.isNaN(num) ? undefined : Math.round(num * 100) / 100;
+};
 
-  const handleTypeARatingChange = (field: keyof RatingA, value: number | undefined) => {
-    if (!selectedNodeId) return;
-    setNodes((prev) =>
-      prev.map((n) => {
+const toPhase = (value: number | undefined): Phase | undefined => {
+  if (value === 0 || value === 1 || value === 3) return value;
+  return undefined;
+};
+
+const handleTypeARatingChange = (field: keyof RatingA, value: number | undefined) => {
+  if (!selectedNodeId) return;
+  setNodes((prev) =>
+    prev.map((n) => {
         if (n.id !== selectedNodeId) return n;
         const data = (n.data ?? {}) as NodeData;
         if (data.type !== "A") return n;
@@ -178,12 +184,18 @@ function App() {
         if (value == null) {
           delete (rating as Record<string, number | undefined>)[field];
         } else {
-          rating[field] = value;
+          if (field === "phase") {
+            const phaseVal = toPhase(value);
+            if (phaseVal == null) delete (rating as Record<string, number | undefined>)[field];
+            else rating.phase = phaseVal;
+          } else {
+            rating[field] = value;
+          }
         }
         return { ...n, data: { ...data, rating } };
       }),
     );
-  };
+};
 
   const handleTypeBRatingChange = (field: keyof RatingB, value: number | undefined) => {
     if (!selectedNodeId) return;
@@ -196,12 +208,18 @@ function App() {
         if (value == null) {
           delete (rating as Record<string, number | undefined>)[field];
         } else {
-          rating[field] = value;
+          if (field === "phase") {
+            const phaseVal = toPhase(value);
+            if (phaseVal == null) delete (rating as Record<string, number | undefined>)[field];
+            else rating.phase = phaseVal;
+          } else {
+            rating[field] = value;
+          }
         }
         return { ...n, data: { ...data, rating } };
       }),
     );
-  };
+};
 
   const ensureTypeCRating = (rating?: Block["rating"]): RatingC => {
     const fallback = defaultRatings.C as RatingC;
@@ -239,12 +257,24 @@ function App() {
           else next.eta = value;
         } else if (scope === "in" && field in next.in) {
           const key = field as keyof RatingC["in"];
-          if (value == null) delete (next.in as Record<string, number | undefined>)[key];
-          else next.in[key] = value;
+          if (key === "phase_in") {
+            const phaseVal = toPhase(value);
+            if (phaseVal == null) delete (next.in as Record<string, number | undefined>)[key];
+            else next.in.phase_in = phaseVal;
+          } else {
+            if (value == null) delete (next.in as Record<string, number | undefined>)[key];
+            else next.in[key] = value;
+          }
         } else if (scope === "out" && field in next.out) {
           const key = field as keyof RatingC["out"];
-          if (value == null) delete (next.out as Record<string, number | undefined>)[key];
-          else next.out[key] = value;
+          if (key === "phase_out") {
+            const phaseVal = toPhase(value);
+            if (phaseVal == null) delete (next.out as Record<string, number | undefined>)[key];
+            else next.out.phase_out = phaseVal;
+          } else {
+            if (value == null) delete (next.out as Record<string, number | undefined>)[key];
+            else next.out[key] = value;
+          }
         }
 
         return { ...n, data: { ...data, rating: next } };
@@ -418,9 +448,7 @@ function App() {
                         ((selectedNode.data as NodeData)?.rating as RatingA | undefined)?.phase ??
                         ""
                       }
-                      onChange={(e) =>
-                        handleTypeARatingChange("phase", Number(e.target.value) as RatingA["phase"])
-                      }
+                      onChange={(e) => handleTypeARatingChange("phase", toPhase(Number(e.target.value)))}
                     >
                       {[0, 1, 3].map((phase) => (
                         <MenuItem key={phase} value={phase}>
@@ -476,9 +504,7 @@ function App() {
                         ((selectedNode.data as NodeData)?.rating as RatingB | undefined)?.phase ??
                         ""
                       }
-                      onChange={(e) =>
-                        handleTypeBRatingChange("phase", Number(e.target.value) as RatingB["phase"])
-                      }
+                      onChange={(e) => handleTypeBRatingChange("phase", toPhase(Number(e.target.value)))}
                     >
                       {[0, 1, 3].map((phase) => (
                         <MenuItem key={phase} value={phase}>
@@ -540,21 +566,17 @@ function App() {
                         />
                         <TextField
                           size="small"
-                          label="Phase_in"
-                          select
-                          value={rating.in.phase_in ?? ""}
-                          onChange={(e) =>
-                            handleTypeCRatingChange(
-                              "in",
-                              "phase_in",
-                              Number(e.target.value) as RatingC["in"]["phase_in"],
-                            )
-                          }
-                        >
-                          {[0, 1, 3].map((phase) => (
-                            <MenuItem key={phase} value={phase}>
-                              {phase}
-                            </MenuItem>
+                        label="Phase_in"
+                        select
+                        value={rating.in.phase_in ?? ""}
+                        onChange={(e) =>
+                          handleTypeCRatingChange("in", "phase_in", toPhase(Number(e.target.value)))
+                        }
+                      >
+                        {[0, 1, 3].map((phase) => (
+                          <MenuItem key={phase} value={phase}>
+                            {phase}
+                          </MenuItem>
                           ))}
                         </TextField>
 
@@ -605,21 +627,17 @@ function App() {
                         />
                         <TextField
                           size="small"
-                          label="Phase_out"
-                          select
-                          value={rating.out.phase_out ?? ""}
-                          onChange={(e) =>
-                            handleTypeCRatingChange(
-                              "out",
-                              "phase_out",
-                              Number(e.target.value) as RatingC["out"]["phase_out"],
-                            )
-                          }
-                        >
-                          {[0, 1, 3].map((phase) => (
-                            <MenuItem key={phase} value={phase}>
-                              {phase}
-                            </MenuItem>
+                        label="Phase_out"
+                        select
+                        value={rating.out.phase_out ?? ""}
+                        onChange={(e) =>
+                          handleTypeCRatingChange("out", "phase_out", toPhase(Number(e.target.value)))
+                        }
+                      >
+                        {[0, 1, 3].map((phase) => (
+                          <MenuItem key={phase} value={phase}>
+                            {phase}
+                          </MenuItem>
                           ))}
                         </TextField>
 
