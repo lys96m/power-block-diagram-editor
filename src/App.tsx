@@ -32,10 +32,15 @@ import type {
   RatingA,
   RatingB,
   RatingC,
-  Phase,
   Project,
 } from "./types/diagram";
 import { createEmptyProject, parseProject, serializeProject } from "./services/projectIO";
+import {
+  defaultRatings,
+  ensureTypeCRating,
+  toNumberOrUndefined,
+  toPhase,
+} from "./lib/ratingHelpers";
 import { validateBlockOnNet } from "./services/validation";
 import "./App.css";
 import "reactflow/dist/style.css";
@@ -61,15 +66,6 @@ const defaultNet: Net = {
   phase: 1,
   label: "AC200V",
   tolerance: 10,
-};
-
-const defaultRatings: Record<BlockType, Block["rating"]> = {
-  A: { V_max: 250, I_max: 20, phase: 1 },
-  B: { V_in: 200, phase: 1 },
-  C: {
-    in: { V_in: 200, phase_in: 1 },
-    out: { V_out: 24, phase_out: 0 },
-  },
 };
 
 const typeLabels: Record<BlockType, string> = {
@@ -150,17 +146,6 @@ function App() {
     );
   };
 
-  const toNumberOrUndefined = (value: string): number | undefined => {
-    if (value === "") return undefined;
-    const num = Number(value);
-    return Number.isNaN(num) ? undefined : Math.round(num * 100) / 100;
-  };
-
-  const toPhase = (value: number | undefined): Phase | undefined => {
-    if (value === 0 || value === 1 || value === 3) return value;
-    return undefined;
-  };
-
   const handleTypeARatingChange = (field: keyof RatingA, value: number | undefined) => {
     if (!selectedNodeId) return;
     setNodes((prev) =>
@@ -207,19 +192,6 @@ function App() {
         return { ...n, data: { ...data, rating } };
       }),
     );
-  };
-
-  const ensureTypeCRating = (rating?: Block["rating"]): RatingC => {
-    const fallback = defaultRatings.C as RatingC;
-    if (!rating || typeof rating !== "object") {
-      return { ...fallback, in: { ...fallback.in }, out: { ...fallback.out } };
-    }
-    const cast = rating as RatingC;
-    return {
-      in: { ...fallback.in, ...(cast.in ?? {}) },
-      out: { ...fallback.out, ...(cast.out ?? {}) },
-      eta: cast.eta,
-    };
   };
 
   const handleTypeCRatingChange = (
