@@ -17,6 +17,8 @@ import type { Edge, EdgeProps } from "reactflow";
 import { useMemo, useState } from "react";
 import TextField from "@mui/material/TextField";
 import { useDiagramState } from "./state/DiagramState";
+import type { ValidationResult, Block, Net } from "./types/diagram";
+import { validateBlockOnNet } from "./services/validation";
 import "./App.css";
 import "reactflow/dist/style.css";
 
@@ -34,6 +36,15 @@ const SmoothEdge = (props: EdgeProps) => {
   });
 
   return <BaseEdge {...props} path={path} />;
+};
+
+const defaultNet: Net = {
+  id: "net-ac200",
+  kind: "AC",
+  voltage: 200,
+  phase: 1,
+  label: "AC200V",
+  tolerance: 10,
 };
 
 function App() {
@@ -113,8 +124,38 @@ function App() {
     setSelectedEdgeId(null);
   };
 
-  const errors = 0;
-  const warnings = 0;
+  type NodeData = { type?: Block["type"]; label?: string; rating?: Block["rating"] };
+
+  const validationResults = useMemo(() => {
+    const results: ValidationResult[] = [];
+    nodes.forEach((node) => {
+      const data = (node.data ?? {}) as NodeData;
+      const type = data.type;
+      const rating = data.rating;
+      if (!type || !rating) {
+        results.push({
+          id: `warn-${node.id}-missing-type`,
+          level: "warn",
+          message: "Missing type or rating",
+          targetId: node.id,
+        });
+        return;
+      }
+      const block: Block = {
+        id: node.id,
+        type,
+        name: data.label ?? node.id,
+        rating,
+        ports: [],
+      } as Block;
+      const { issues } = validateBlockOnNet(block, defaultNet);
+      results.push(...issues);
+    });
+    return results;
+  }, [nodes]);
+
+  const errors = validationResults.filter((r) => r.level === "error").length;
+  const warnings = validationResults.filter((r) => r.level === "warn").length;
 
   return (
     <Box className="app-root">
