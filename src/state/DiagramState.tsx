@@ -21,6 +21,7 @@ type DiagramState = {
   addNode: (kind: "A" | "B" | "C") => void;
   deleteItems: (nodeIds: string[], edgeIds: string[]) => void;
   updateNodeData: (nodeId: string, data: Partial<Node["data"]>) => void;
+  replaceDiagram: (nodes: Node[], edges: Edge[]) => void;
 };
 
 const DiagramStateContext = createContext<DiagramState | null>(null);
@@ -54,6 +55,16 @@ const initialEdges: Edge[] = [
   { id: "e1-2", source: "source", target: "breaker", type: "smooth" },
   { id: "e2-3", source: "breaker", target: "load", type: "smooth" },
 ];
+
+const nextCounterFromNodes = (nodes: Node[]): number => {
+  const maxNumericId = nodes.reduce<number>((max, node) => {
+    const match = node.id.match(/(\d+)$/);
+    const num = match ? Number(match[1]) : Number.NaN;
+    if (!Number.isNaN(num) && num > max) return num;
+    return max;
+  }, 0);
+  return Math.max(maxNumericId, nodes.length);
+};
 
 export const DiagramProvider = ({ children }: { children: React.ReactNode }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
@@ -107,6 +118,12 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
     );
   };
 
+  const replaceDiagram = (nextNodes: Node[], nextEdges: Edge[]) => {
+    setNodes(nextNodes);
+    setEdges(nextEdges);
+    nodeCounter.current = nextCounterFromNodes(nextNodes);
+  };
+
   return (
     <DiagramStateContext.Provider
       value={{
@@ -120,6 +137,7 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
         addNode,
         deleteItems,
         updateNodeData,
+        replaceDiagram,
       }}
     >
       {children}
