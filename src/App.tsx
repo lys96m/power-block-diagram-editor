@@ -8,11 +8,11 @@ import type { EdgeProps } from "reactflow";
 import { useMemo, useState } from "react";
 import { useDiagramState } from "./state/DiagramState";
 import { wouldCreateCycle } from "./lib/graph";
+import { defaultNet, typeLabels } from "./lib/constants";
 import type {
   ValidationResult,
   Block,
   BlockType,
-  Net,
   RatingA,
   RatingB,
   RatingC,
@@ -40,21 +40,6 @@ const SmoothEdge = (props: EdgeProps) => {
   });
 
   return <BaseEdge {...props} path={path} />;
-};
-
-const defaultNet: Net = {
-  id: "net-ac200",
-  kind: "AC",
-  voltage: 200,
-  phase: 1,
-  label: "AC200V",
-  tolerance: 10,
-};
-
-const typeLabels: Record<BlockType, string> = {
-  A: "Breaker / Passive",
-  B: "Load",
-  C: "Converter / Source",
 };
 
 function App() {
