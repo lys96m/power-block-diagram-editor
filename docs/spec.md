@@ -96,6 +96,7 @@ target application version: 0.1.0
 - 整合ルール: `schema_version` は "1.0.0" 固定。`blocks/nets/connections` の `id` はそれぞれユニーク。`connections.net` は null または `nets.id` を参照。`layout.blocks` キーは `blocks.id` に一致、`layout.edges` キーは `connections` に一致。未参照 net は警告だが許容。参照不整合は読み込み時にエラー。
 - レイアウト座標: 単位は px、原点はキャンバス左上、y 軸は下向き。`w/h` は必須、`rotation` は 0 デフォルト。edge `routing` は v1 は `"orthogonal"` 固定。`points` はキャンバス座標の配列で必須。
 - 数値単位/範囲: 電圧=V, 電流=A, 電力=W。phase は 0=DC,1=単相,3=三相。`eta` は 0–1 の小数（%入力は内部で 0–1 に変換）。負値や範囲外はエラー。
+- 入力精度: UI 上の電圧/電流などの数値入力は 0.01 単位を標準とする（入力 step=0.01）。
 
 ## 6. net 割当フロー（案B）
 
