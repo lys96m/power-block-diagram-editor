@@ -37,7 +37,8 @@ const SmoothEdge = (props: EdgeProps) => {
 };
 
 function App() {
-  const { nodes, edges, setNodes, onNodesChange, onEdgesChange, onConnect } = useDiagramState();
+  const { nodes, edges, setNodes, onNodesChange, onEdgesChange, onConnect, addNode, deleteItems } =
+    useDiagramState();
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
 
@@ -103,6 +104,15 @@ function App() {
     );
   };
 
+  const handleDeleteSelected = () => {
+    const nodesToDelete = selectedNodeId ? [selectedNodeId] : [];
+    const edgesToDelete = selectedEdgeId ? [selectedEdgeId] : [];
+    if (nodesToDelete.length === 0 && edgesToDelete.length === 0) return;
+    deleteItems(nodesToDelete, edgesToDelete);
+    setSelectedNodeId(null);
+    setSelectedEdgeId(null);
+  };
+
   const errors = 0;
   const warnings = 0;
 
@@ -130,13 +140,13 @@ function App() {
           </Typography>
           <Divider />
           <Stack spacing={1} mt={2}>
-            <Button variant="contained" size="small" fullWidth>
+            <Button variant="contained" size="small" fullWidth onClick={() => addNode("A")}>
               Add Type A
             </Button>
-            <Button variant="contained" size="small" fullWidth>
+            <Button variant="contained" size="small" fullWidth onClick={() => addNode("B")}>
               Add Type B
             </Button>
-            <Button variant="contained" size="small" fullWidth>
+            <Button variant="contained" size="small" fullWidth onClick={() => addNode("C")}>
               Add Type C
             </Button>
           </Stack>
@@ -197,6 +207,11 @@ function App() {
               <Typography variant="body2" color="text.secondary">
                 Nothing selected
               </Typography>
+            )}
+            {(selectedNode || selectedEdge) && (
+              <Button variant="outlined" color="error" size="small" onClick={handleDeleteSelected}>
+                Delete Selected
+              </Button>
             )}
           </Stack>
 

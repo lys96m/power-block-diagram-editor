@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext } from "react";
+import { createContext, useContext, useRef } from "react";
 import { addEdge, useEdgesState, useNodesState } from "reactflow";
 import type {
   Edge,
@@ -18,6 +18,8 @@ type DiagramState = {
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
+  addNode: (kind: "A" | "B" | "C") => void;
+  deleteItems: (nodeIds: string[], edgeIds: string[]) => void;
 };
 
 const DiagramStateContext = createContext<DiagramState | null>(null);
@@ -36,13 +38,53 @@ const initialEdges: Edge[] = [
 export const DiagramProvider = ({ children }: { children: React.ReactNode }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const nodeCounter = useRef(3);
 
   const onConnect: OnConnect = (connection) =>
     setEdges((eds) => addEdge({ ...connection, type: "smooth" }, eds));
 
+  const addNode = (kind: "A" | "B" | "C") => {
+    const id = `${kind}${nodeCounter.current + 1}`;
+    nodeCounter.current += 1;
+    const offset = nodeCounter.current * 30;
+    const labelMap: Record<"A" | "B" | "C", string> = {
+      A: "Type A",
+      B: "Type B",
+      C: "Type C",
+    };
+    const newNode: Node = {
+      id,
+      position: { x: 200 + offset, y: 200 + offset },
+      data: { label: `${labelMap[kind]} ${nodeCounter.current}` },
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
+  const deleteItems = (nodeIds: string[], edgeIds: string[]) => {
+    setEdges((prev) =>
+      prev.filter(
+        (e) =>
+          !edgeIds.includes(e.id) &&
+          !nodeIds.includes(e.source ?? "") &&
+          !nodeIds.includes(e.target ?? ""),
+      ),
+    );
+    setNodes((prev) => prev.filter((n) => !nodeIds.includes(n.id)));
+  };
+
   return (
     <DiagramStateContext.Provider
-      value={{ nodes, edges, setNodes, setEdges, onNodesChange, onEdgesChange, onConnect }}
+      value={{
+        nodes,
+        edges,
+        setNodes,
+        setEdges,
+        onNodesChange,
+        onEdgesChange,
+        onConnect,
+        addNode,
+        deleteItems,
+      }}
     >
       {children}
     </DiagramStateContext.Provider>
