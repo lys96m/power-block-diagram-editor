@@ -6,6 +6,11 @@ import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Alert from "@mui/material/Alert";
 import {
   Background,
   ConnectionLineType,
@@ -14,7 +19,7 @@ import {
   BaseEdge,
   getSmoothStepPath,
 } from "reactflow";
-import type { Edge, EdgeProps } from "reactflow";
+import type { Edge, EdgeProps, Node } from "reactflow";
 import { useMemo, useState } from "react";
 import TextField from "@mui/material/TextField";
 import { useDiagramState } from "./state/DiagramState";
@@ -27,7 +32,9 @@ import type {
   RatingB,
   RatingC,
   Phase,
+  Project,
 } from "./types/diagram";
+import { createEmptyProject, parseProject, serializeProject } from "./services/projectIO";
 import { validateBlockOnNet } from "./services/validation";
 import "./App.css";
 import "reactflow/dist/style.css";
@@ -73,10 +80,24 @@ const typeLabels: Record<BlockType, string> = {
 };
 
 function App() {
-  const { nodes, edges, setNodes, onNodesChange, onEdgesChange, onConnect, addNode, deleteItems } =
-    useDiagramState();
+  const {
+    nodes,
+    edges,
+    setNodes,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+    addNode,
+    deleteItems,
+    replaceDiagram,
+  } = useDiagramState();
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const [projectDialog, setProjectDialog] = useState<{
+    mode: "open" | "save" | "export" | null;
+    text: string;
+    error?: string;
+  }>({ mode: null, text: "" });
 
   const edgeTypes = { smooth: SmoothEdge };
 
@@ -282,6 +303,71 @@ function App() {
     );
   };
 
+  const diagramToProject = (): Project => {
+    const now = new Date().toISOString();
+    return {
+      schema_version: "1.0.0",
+      meta: { title: "Untitled", created_at: now, updated_at: now, author: "unknown" },
+      nets: [],
+      blocks: nodes.map((n) => {
+        const data = (n.data ?? {}) as NodeData;
+        const type = data.type ?? "A";
+        const rating = (data.rating as Block["rating"]) ?? defaultRatings[type];
+        return {
+          id: n.id,
+          type,
+          name: data.label ?? n.id,
+          rating,
+          ports: [
+            { id: "in", role: "power_in", direction: "in" },
+            { id: "out", role: "power_out", direction: "out" },
+          ],
+        };
+      }),
+      connections: edges.map((e, idx) => ({
+        from: `${e.source}:out`,
+        to: `${e.target}:in`,
+        net: null,
+        label: e.label ?? `conn-${idx + 1}`,
+      })),
+      layout: {
+        blocks: nodes.reduce<Record<string, { x: number; y: number; w: number; h: number }>>(
+          (acc, n) => {
+            acc[n.id] = {
+              x: n.position?.x ?? 0,
+              y: n.position?.y ?? 0,
+              w: 160,
+              h: 80,
+            };
+            return acc;
+          },
+          {},
+        ),
+        edges: {},
+      },
+    };
+  };
+
+  const projectToDiagram = (project: Project): { nodes: Node[]; edges: Edge[] } => {
+    const layoutBlocks = project.layout?.blocks ?? {};
+    const nodesFromProject: Node[] = project.blocks.map((b, idx) => {
+      const layout = layoutBlocks[b.id];
+      return {
+        id: b.id,
+        position: { x: layout?.x ?? 100 + idx * 80, y: layout?.y ?? 100 },
+        data: { label: b.name, type: b.type, rating: b.rating },
+      };
+    });
+
+    const edgesFromProject: Edge[] = project.connections.map((c, idx) => {
+      const source = c.from.split(":")[0];
+      const target = c.to.split(":")[0];
+      return { id: c.label ?? `edge-${idx + 1}`, source, target, type: "smooth" };
+    });
+
+    return { nodes: nodesFromProject, edges: edgesFromProject };
+  };
+
   const handleDeleteSelected = () => {
     const nodesToDelete = selectedNodeId ? [selectedNodeId] : [];
     const edgesToDelete = selectedEdgeId ? [selectedEdgeId] : [];
@@ -289,6 +375,42 @@ function App() {
     deleteItems(nodesToDelete, edgesToDelete);
     setSelectedNodeId(null);
     setSelectedEdgeId(null);
+  };
+
+  const resetSelection = () => {
+    setSelectedNodeId(null);
+    setSelectedEdgeId(null);
+  };
+
+  const handleNewProject = () => {
+    const emptyProject = createEmptyProject();
+    const { nodes: nextNodes, edges: nextEdges } = projectToDiagram(emptyProject);
+    replaceDiagram(nextNodes, nextEdges);
+    resetSelection();
+  };
+
+  const handleOpenDialog = () => {
+    setProjectDialog({ mode: "open", text: "", error: undefined });
+  };
+
+  const handleSaveDialog = (mode: "save" | "export") => {
+    const json = serializeProject(diagramToProject());
+    setProjectDialog({ mode, text: json, error: undefined });
+  };
+
+  const closeProjectDialog = () => setProjectDialog({ mode: null, text: "", error: undefined });
+
+  const applyOpenProject = () => {
+    try {
+      const project = parseProject(projectDialog.text);
+      const { nodes: nextNodes, edges: nextEdges } = projectToDiagram(project);
+      replaceDiagram(nextNodes, nextEdges);
+      resetSelection();
+      closeProjectDialog();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load project";
+      setProjectDialog((prev) => ({ ...prev, error: message }));
+    }
   };
 
   type NodeData = { type?: BlockType; label?: string; rating?: Block["rating"] };
@@ -332,11 +454,46 @@ function App() {
             Power Block Diagram Editor
           </Typography>
           <Stack direction="row" spacing={1}>
-            {actions.map((label) => (
-              <Button key={label} color="inherit" size="small" variant="text">
-                {label}
-              </Button>
-            ))}
+            <Button color="inherit" size="small" variant="text" onClick={handleNewProject}>
+              New
+            </Button>
+            <Button color="inherit" size="small" variant="text" onClick={handleOpenDialog}>
+              Open
+            </Button>
+            <Button
+              color="inherit"
+              size="small"
+              variant="text"
+              onClick={() => handleSaveDialog("save")}
+            >
+              Save
+            </Button>
+            <Button
+              color="inherit"
+              size="small"
+              variant="text"
+              onClick={() => handleSaveDialog("export")}
+            >
+              Export
+            </Button>
+            <Button
+              color="inherit"
+              size="small"
+              variant="text"
+              disabled
+              title="Undo not implemented"
+            >
+              Undo
+            </Button>
+            <Button
+              color="inherit"
+              size="small"
+              variant="text"
+              disabled
+              title="Redo not implemented"
+            >
+              Redo
+            </Button>
           </Stack>
         </Toolbar>
       </AppBar>
@@ -716,6 +873,68 @@ function App() {
           0
         </Typography>
       </Box>
+
+      <Dialog
+        open={projectDialog.mode !== null}
+        onClose={closeProjectDialog}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>
+          {projectDialog.mode === "open"
+            ? "Open project (JSON)"
+            : projectDialog.mode === "save"
+              ? "Save project (JSON copy)"
+              : "Export project (JSON copy)"}
+        </DialogTitle>
+        <DialogContent dividers>
+          {projectDialog.mode === "open" ? (
+            <Typography variant="body2" gutterBottom>
+              project.json を貼り付けて「Load」を押してください。
+            </Typography>
+          ) : (
+            <Typography variant="body2" gutterBottom>
+              JSON をコピーして保存してください（ダウンロードは未実装）。
+            </Typography>
+          )}
+          <TextField
+            fullWidth
+            multiline
+            minRows={12}
+            value={projectDialog.text}
+            onChange={(e) => setProjectDialog((prev) => ({ ...prev, text: e.target.value }))}
+            disabled={projectDialog.mode !== "open"}
+          />
+          {projectDialog.error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {projectDialog.error}
+            </Alert>
+          )}
+          {projectDialog.mode === "export" && !projectDialog.error && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              Export (JSON コピー) のみ対応中。ダウンロードは後続対応。
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeProjectDialog}>Close</Button>
+          {projectDialog.mode === "open" ? (
+            <Button variant="contained" onClick={applyOpenProject}>
+              Load
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              onClick={() => {
+                if (navigator?.clipboard?.writeText)
+                  navigator.clipboard.writeText(projectDialog.text);
+              }}
+            >
+              Copy JSON
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
