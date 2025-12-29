@@ -17,7 +17,7 @@ import type { Edge, EdgeProps } from "reactflow";
 import { useMemo, useState } from "react";
 import TextField from "@mui/material/TextField";
 import { useDiagramState } from "./state/DiagramState";
-import type { ValidationResult, Block, Net, RatingA, RatingB } from "./types/diagram";
+import type { ValidationResult, Block, Net } from "./types/diagram";
 import { validateBlockOnNet } from "./services/validation";
 import "./App.css";
 import "reactflow/dist/style.css";
@@ -108,46 +108,10 @@ function App() {
   };
 
   const handleNodeLabelChange = (value: string) => {
-    if (!selectedNodeId) return;
     setNodes((prev) =>
       prev.map((n) =>
         n.id === selectedNodeId ? { ...n, data: { ...(n.data ?? {}), label: value } } : n,
       ),
-    );
-  };
-
-  const handleNodeTypeChange = (value: Block["type"]) => {
-    if (!selectedNodeId) return;
-    setNodes((prev) =>
-      prev.map((n) =>
-        n.id === selectedNodeId ? { ...n, data: { ...(n.data ?? {}), type: value } } : n,
-      ),
-    );
-  };
-
-  const handleRatingChange = (field: string, value: number | undefined) => {
-    if (!selectedNodeId) return;
-    if (value === undefined || Number.isNaN(value) || value < 0.01) {
-      setNodes((prev) =>
-        prev.map((n) => {
-          if (n.id !== selectedNodeId) return n;
-          const data = (n.data ?? {}) as NodeData;
-          const nextRating = { ...(data.rating ?? {}) } as Record<string, number>;
-          delete nextRating[field];
-          return { ...n, data: { ...data, rating: nextRating } };
-        }),
-      );
-      return;
-    }
-    const rounded = Math.round(value * 100) / 100;
-    setNodes((prev) =>
-      prev.map((n) => {
-        if (n.id !== selectedNodeId) return n;
-        const data = (n.data ?? {}) as NodeData;
-        const nextRating = { ...(data.rating ?? {}) } as Record<string, number>;
-        nextRating[field] = rounded;
-        return { ...n, data: { ...data, rating: nextRating } };
-      }),
     );
   };
 
@@ -265,50 +229,8 @@ function App() {
                 <TextField
                   size="small"
                   label="Label"
-                  value={(selectedNode.data as NodeData)?.label ?? ""}
+                  value={selectedNode.data?.label ?? ""}
                   onChange={(e) => handleNodeLabelChange(e.target.value)}
-                />
-                <TextField
-                  size="small"
-                  label="Type"
-                  value={(selectedNode.data as NodeData)?.type ?? ""}
-                  onChange={(e) => handleNodeTypeChange(e.target.value as Block["type"])}
-                />
-                <TextField
-                  size="small"
-                  label="Rating: V (V)"
-                  type="number"
-                  inputProps={{ step: 1, min: 0, inputMode: "decimal" }}
-                  helperText="Spinner ±1, decimal up to 0.01"
-                  value={
-                    ((selectedNode.data as NodeData)?.rating as Partial<RatingB & RatingA>)?.V_in ??
-                    ((selectedNode.data as NodeData)?.rating as Partial<RatingA>)?.V_max ??
-                    ""
-                  }
-                  onChange={(e) =>
-                    handleRatingChange(
-                      "V_in",
-                      e.target.value === "" ? undefined : Number(e.target.value),
-                    )
-                  }
-                />
-                <TextField
-                  size="small"
-                  label="Rating: I (A)"
-                  type="number"
-                  inputProps={{ step: 1, min: 0, inputMode: "decimal" }}
-                  helperText="Spinner ±1, decimal up to 0.01"
-                  value={
-                    ((selectedNode.data as NodeData)?.rating as Partial<RatingB & RatingA>)?.I_in ??
-                    ((selectedNode.data as NodeData)?.rating as Partial<RatingA>)?.I_max ??
-                    ""
-                  }
-                  onChange={(e) =>
-                    handleRatingChange(
-                      "I_in",
-                      e.target.value === "" ? undefined : Number(e.target.value),
-                    )
-                  }
                 />
               </>
             )}
