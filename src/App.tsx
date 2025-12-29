@@ -14,6 +14,8 @@ import {
   getSmoothStepPath,
 } from "reactflow";
 import type { Edge, EdgeProps } from "reactflow";
+import TextField from "@mui/material/TextField";
+import { useCallback, useMemo, useState } from "react";
 import { DiagramProvider, useDiagramState } from "./state/DiagramState";
 import "./App.css";
 import "reactflow/dist/style.css";
@@ -35,7 +37,9 @@ const SmoothEdge = (props: EdgeProps) => {
 };
 
 function App() {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect } = useDiagramState();
+  const { nodes, edges, setNodes, onNodesChange, onEdgesChange, onConnect } = useDiagramState();
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
 
   const edgeTypes = { smooth: SmoothEdge };
 
@@ -59,6 +63,40 @@ function App() {
     }
     return false;
   };
+
+  const selectedNode = useMemo(
+    () => nodes.find((n) => n.id === selectedNodeId) ?? null,
+    [nodes, selectedNodeId],
+  );
+  const selectedEdge = useMemo(
+    () => edges.find((e) => e.id === selectedEdgeId) ?? null,
+    [edges, selectedEdgeId],
+  );
+
+  const handleSelectionChange = useCallback(
+    ({
+      nodes: selectedNodes,
+      edges: selectedEdges,
+    }: {
+      nodes: typeof nodes;
+      edges: typeof edges;
+    }) => {
+      setSelectedNodeId(selectedNodes[0]?.id ?? null);
+      setSelectedEdgeId(selectedEdges[0]?.id ?? null);
+    },
+    [],
+  );
+
+  const handleNodeLabelChange = useCallback(
+    (value: string) => {
+      setNodes((prev) =>
+        prev.map((n) =>
+          n.id === selectedNodeId ? { ...n, data: { ...(n.data ?? {}), label: value } } : n,
+        ),
+      );
+    },
+    [selectedNodeId, setNodes],
+  );
 
   const wouldCreateCycle = (
     existing: Edge[],
@@ -120,6 +158,7 @@ function App() {
               }}
               edgeTypes={edgeTypes}
               connectionLineType={ConnectionLineType.SmoothStep}
+              onSelectionChange={handleSelectionChange}
               snapToGrid
               snapGrid={[16, 16]}
               fitView
@@ -135,9 +174,34 @@ function App() {
             </Typography>
             <Divider />
             <Stack spacing={1} mt={2}>
-              <Typography variant="body2" color="text.secondary">
-                Nothing selected
-              </Typography>
+              {selectedNode && (
+                <>
+                  <Typography variant="body2" fontWeight={600}>
+                    Node: {selectedNode.id}
+                  </Typography>
+                  <TextField
+                    size="small"
+                    label="Label"
+                    value={selectedNode.data?.label ?? ""}
+                    onChange={(e) => handleNodeLabelChange(e.target.value)}
+                  />
+                </>
+              )}
+              {selectedEdge && (
+                <>
+                  <Typography variant="body2" fontWeight={600}>
+                    Edge: {selectedEdge.id}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {selectedEdge.source} → {selectedEdge.target}
+                  </Typography>
+                </>
+              )}
+              {!selectedNode && !selectedEdge && (
+                <Typography variant="body2" color="text.secondary">
+                  Nothing selected
+                </Typography>
+              )}
             </Stack>
 
             <Divider sx={{ my: 2 }} />
