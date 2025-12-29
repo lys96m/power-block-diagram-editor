@@ -127,16 +127,25 @@ function App() {
 
   const handleRatingChange = (field: string, value: number | undefined) => {
     if (!selectedNodeId) return;
+    if (value === undefined || Number.isNaN(value) || value < 0.01) {
+      setNodes((prev) =>
+        prev.map((n) => {
+          if (n.id !== selectedNodeId) return n;
+          const data = (n.data ?? {}) as NodeData;
+          const nextRating = { ...(data.rating ?? {}) } as Record<string, number>;
+          delete nextRating[field];
+          return { ...n, data: { ...data, rating: nextRating } };
+        }),
+      );
+      return;
+    }
+    const rounded = Math.round(value * 100) / 100;
     setNodes((prev) =>
       prev.map((n) => {
         if (n.id !== selectedNodeId) return n;
         const data = (n.data ?? {}) as NodeData;
         const nextRating = { ...(data.rating ?? {}) } as Record<string, number>;
-        if (value === undefined || Number.isNaN(value)) {
-          delete nextRating[field];
-        } else {
-          nextRating[field] = value;
-        }
+        nextRating[field] = rounded;
         return { ...n, data: { ...data, rating: nextRating } };
       }),
     );
@@ -267,9 +276,10 @@ function App() {
                 />
                 <TextField
                   size="small"
-                  label="Rating: V"
+                  label="Rating: V (V)"
                   type="number"
-                  inputProps={{ step: "any" }}
+                  inputProps={{ step: 1, min: 0, inputMode: "decimal" }}
+                  helperText="Spinner ±1, decimal up to 0.01"
                   value={
                     ((selectedNode.data as NodeData)?.rating as Partial<RatingB & RatingA>)?.V_in ??
                     ((selectedNode.data as NodeData)?.rating as Partial<RatingA>)?.V_max ??
@@ -284,9 +294,10 @@ function App() {
                 />
                 <TextField
                   size="small"
-                  label="Rating: I"
+                  label="Rating: I (A)"
                   type="number"
-                  inputProps={{ step: "any" }}
+                  inputProps={{ step: 1, min: 0, inputMode: "decimal" }}
+                  helperText="Spinner ±1, decimal up to 0.01"
                   value={
                     ((selectedNode.data as NodeData)?.rating as Partial<RatingB & RatingA>)?.I_in ??
                     ((selectedNode.data as NodeData)?.rating as Partial<RatingA>)?.I_max ??
