@@ -17,6 +17,8 @@ import {
   getSmoothStepPath,
 } from "reactflow";
 import type { Edge, EdgeProps } from "reactflow";
+import { useMemo, useState } from "react";
+import type { ValidationResult } from "./types/diagram";
 import "./App.css";
 import "reactflow/dist/style.css";
 
@@ -50,6 +52,7 @@ function App() {
 
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [validationResults] = useState<ValidationResult[]>([]);
 
   const edgeTypes = { smooth: SmoothEdge };
 
@@ -84,6 +87,19 @@ function App() {
     const candidate: Edge = { id: "temp", source, target };
     return hasPath([...existing, candidate], target, source);
   };
+
+  const { errors, warnings } = useMemo(
+    () =>
+      validationResults.reduce(
+        (acc, cur) => {
+          if (cur.level === "error") acc.errors += 1;
+          if (cur.level === "warn") acc.warnings += 1;
+          return acc;
+        },
+        { errors: 0, warnings: 0 },
+      ),
+    [validationResults],
+  );
 
   return (
     <Box className="app-root">
@@ -172,7 +188,8 @@ function App() {
       <Box className="status-bar">
         <Typography variant="body2">Status: Ready</Typography>
         <Typography variant="body2" color="text.secondary">
-          Nets: 0 | Errors: 0 | Warnings: 0 | Unassigned nets: 0 | Uncertain loads: 0
+          Nets: 0 | Errors: {errors} | Warnings: {warnings} | Unassigned nets: 0 | Uncertain loads:
+          0
         </Typography>
       </Box>
     </Box>
