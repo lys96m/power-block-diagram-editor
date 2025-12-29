@@ -10,15 +10,13 @@ import {
   ConnectionLineType,
   Controls,
   ReactFlow,
-  addEdge,
-  useEdgesState,
-  useNodesState,
   BaseEdge,
   getSmoothStepPath,
 } from "reactflow";
 import type { Edge, EdgeProps } from "reactflow";
 import TextField from "@mui/material/TextField";
 import { useCallback, useMemo, useState } from "react";
+import { useDiagramState } from "./state/DiagramState";
 import "./App.css";
 import "reactflow/dist/style.css";
 
@@ -39,19 +37,9 @@ const SmoothEdge = (props: EdgeProps) => {
 };
 
 function App() {
-  const initialNodes = [
-    { id: "source", position: { x: 150, y: 120 }, data: { label: "Power Source (Type C)" } },
-    { id: "breaker", position: { x: 450, y: 120 }, data: { label: "Breaker (Type A)" } },
-    { id: "load", position: { x: 750, y: 120 }, data: { label: "Load (Type B)" } },
-  ];
-
-  const initialEdges: Edge[] = [
-    { id: "e1-2", source: "source", target: "breaker", type: "smooth" },
-    { id: "e2-3", source: "breaker", target: "load", type: "smooth" },
-  ];
-
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const { nodes, edges, setNodes, onNodesChange, onEdgesChange, onConnect } = useDiagramState();
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
 
   const edgeTypes = { smooth: SmoothEdge };
 
@@ -76,20 +64,6 @@ function App() {
     return false;
   };
 
-  const wouldCreateCycle = (
-    existing: Edge[],
-    source?: string | null,
-    target?: string | null,
-  ): boolean => {
-    if (!source || !target) return true;
-    if (source === target) return true;
-    const candidate: Edge = { id: "temp", source, target };
-    return hasPath([...existing, candidate], target, source);
-  };
-
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
-
   const selectedNode = useMemo(
     () => nodes.find((n) => n.id === selectedNodeId) ?? null,
     [nodes, selectedNodeId],
@@ -110,19 +84,30 @@ function App() {
       setSelectedNodeId(selectedNodes[0]?.id ?? null);
       setSelectedEdgeId(selectedEdges[0]?.id ?? null);
     },
-    [setSelectedEdgeId, setSelectedNodeId],
+    [],
   );
 
   const handleNodeLabelChange = useCallback(
     (value: string) => {
       setNodes((prev) =>
         prev.map((n) =>
-          n.id === selectedNodeId ? { ...n, data: { ...n.data, label: value } } : n,
+          n.id === selectedNodeId ? { ...n, data: { ...(n.data ?? {}), label: value } } : n,
         ),
       );
     },
     [selectedNodeId, setNodes],
   );
+
+  const wouldCreateCycle = (
+    existing: Edge[],
+    source?: string | null,
+    target?: string | null,
+  ): boolean => {
+    if (!source || !target) return true;
+    if (source === target) return true;
+    const candidate: Edge = { id: "temp", source, target };
+    return hasPath([...existing, candidate], target, source);
+  };
 
   return (
     <Box className="app-root">
@@ -166,14 +151,10 @@ function App() {
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            onConnect={(connection) =>
-              setEdges((eds) => {
-                if (wouldCreateCycle(eds, connection.source, connection.target)) {
-                  return eds;
-                }
-                return addEdge({ ...connection, type: "smooth" }, eds);
-              })
-            }
+            onConnect={(connection) => {
+              if (wouldCreateCycle(edges, connection.source, connection.target)) return;
+              onConnect(connection);
+            }}
             edgeTypes={edgeTypes}
             connectionLineType={ConnectionLineType.SmoothStep}
             onSelectionChange={handleSelectionChange}
