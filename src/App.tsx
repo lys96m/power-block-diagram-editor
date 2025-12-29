@@ -9,11 +9,7 @@ import { useMemo } from "react";
 import { useDiagramState } from "./state/DiagramState";
 import { wouldCreateCycle } from "./lib/graph";
 import { defaultNet, typeLabels } from "./lib/constants";
-import type {
-  ValidationResult,
-  Block,
-  BlockType,
-} from "./types/diagram";
+import type { ValidationResult, Block, BlockType } from "./types/diagram";
 import { validateBlockOnNet } from "./services/validation";
 import HeaderBar from "./components/HeaderBar";
 import DiagramCanvas from "./components/DiagramCanvas";

@@ -45,7 +45,10 @@ export const useNodeEditing = ({ nodes, edges, setNodes, deleteItems }: UseNodeE
     );
   };
 
-  const handleNodeTypeChange = (value: BlockType, defaultRatings: Record<BlockType, Block["rating"]>) => {
+  const handleNodeTypeChange = (
+    value: BlockType,
+    defaultRatings: Record<BlockType, Block["rating"]>,
+  ) => {
     if (!selectedNodeId) return;
     setNodes((prev) =>
       prev.map((n) =>
