@@ -4,7 +4,7 @@ import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { BaseEdge, getSmoothStepPath } from "reactflow";
-import type { Edge, EdgeProps, Node } from "reactflow";
+import type { EdgeProps } from "reactflow";
 import { useMemo, useState } from "react";
 import { useDiagramState } from "./state/DiagramState";
 import { wouldCreateCycle } from "./lib/graph";
@@ -16,9 +16,7 @@ import type {
   RatingA,
   RatingB,
   RatingC,
-  Project,
 } from "./types/diagram";
-import { createEmptyProject, parseProject, serializeProject } from "./services/projectIO";
 import { defaultRatings, ensureTypeCRating, toPhase } from "./lib/ratingHelpers";
 import { validateBlockOnNet } from "./services/validation";
 import HeaderBar from "./components/HeaderBar";
@@ -26,6 +24,7 @@ import DiagramCanvas from "./components/DiagramCanvas";
 import PropertiesPanel from "./components/PropertiesPanel";
 import StatusBar from "./components/StatusBar";
 import ProjectDialog from "./components/ProjectDialog";
+import { useProjectIO } from "./hooks/useProjectIO";
 import "./App.css";
 import "reactflow/dist/style.css";
 
@@ -72,11 +71,20 @@ function App() {
   } = useDiagramState();
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
-  const [projectDialog, setProjectDialog] = useState<{
-    mode: "open" | "save" | "export" | null;
-    text: string;
-    error?: string;
-  }>({ mode: null, text: "" });
+  const resetSelection = () => {
+    setSelectedNodeId(null);
+    setSelectedEdgeId(null);
+  };
+  const {
+    dialogState,
+    setDialogText,
+    closeDialog,
+    openNewProject,
+    openDialog,
+    openSaveOrExport,
+    applyOpenProject,
+    copyDialogText,
+  } = useProjectIO({ nodes, edges, replaceDiagram, resetSelection });
 
   const edgeTypes = { smooth: SmoothEdge };
 
@@ -226,96 +234,6 @@ function App() {
     );
   };
 
-  const diagramToProject = (): Project => {
-    const now = new Date().toISOString();
-    const toBlock = (n: Node): Block => {
-      const data = (n.data ?? {}) as NodeData;
-      const type = (data.type as BlockType | undefined) ?? "A";
-      if (type === "A") {
-        const rating: RatingA = (data.rating as RatingA) ?? (defaultRatings.A as RatingA);
-        return {
-          id: n.id,
-          type: "A",
-          name: data.label ?? n.id,
-          rating,
-          ports: [
-            { id: "in", role: "power_in", direction: "in" },
-            { id: "out", role: "power_out", direction: "out" },
-          ],
-        };
-      }
-      if (type === "B") {
-        const rating: RatingB = (data.rating as RatingB) ?? (defaultRatings.B as RatingB);
-        return {
-          id: n.id,
-          type: "B",
-          name: data.label ?? n.id,
-          rating,
-          ports: [{ id: "in", role: "power_in", direction: "in" }],
-        };
-      }
-      const rating: RatingC = ensureTypeCRating(data.rating);
-      return {
-        id: n.id,
-        type: "C",
-        name: data.label ?? n.id,
-        rating,
-        ports: [
-          { id: "in", role: "power_in", direction: "in" },
-          { id: "out", role: "power_out", direction: "out" },
-        ],
-      };
-    };
-
-    return {
-      schema_version: "1.0.0",
-      meta: { title: "Untitled", created_at: now, updated_at: now, author: "unknown" },
-      nets: [],
-      blocks: nodes.map((n) => toBlock(n)),
-      connections: edges.map((e, idx) => ({
-        from: `${e.source}:out`,
-        to: `${e.target}:in`,
-        net: null,
-        label: typeof e.label === "string" ? e.label : `conn-${idx + 1}`,
-      })),
-      layout: {
-        blocks: nodes.reduce<Record<string, { x: number; y: number; w: number; h: number }>>(
-          (acc, n) => {
-            acc[n.id] = {
-              x: n.position?.x ?? 0,
-              y: n.position?.y ?? 0,
-              w: 160,
-              h: 80,
-            };
-            return acc;
-          },
-          {},
-        ),
-        edges: {},
-      },
-    };
-  };
-
-  const projectToDiagram = (project: Project): { nodes: Node[]; edges: Edge[] } => {
-    const layoutBlocks = project.layout?.blocks ?? {};
-    const nodesFromProject: Node[] = project.blocks.map((b, idx) => {
-      const layout = layoutBlocks[b.id];
-      return {
-        id: b.id,
-        position: { x: layout?.x ?? 100 + idx * 80, y: layout?.y ?? 100 },
-        data: { label: b.name, type: b.type, rating: b.rating },
-      };
-    });
-
-    const edgesFromProject: Edge[] = project.connections.map((c, idx) => {
-      const source = c.from.split(":")[0];
-      const target = c.to.split(":")[0];
-      return { id: c.label ?? `edge-${idx + 1}`, source, target, type: "smooth" };
-    });
-
-    return { nodes: nodesFromProject, edges: edgesFromProject };
-  };
-
   const handleDeleteSelected = () => {
     const nodesToDelete = selectedNodeId ? [selectedNodeId] : [];
     const edgesToDelete = selectedEdgeId ? [selectedEdgeId] : [];
@@ -323,42 +241,6 @@ function App() {
     deleteItems(nodesToDelete, edgesToDelete);
     setSelectedNodeId(null);
     setSelectedEdgeId(null);
-  };
-
-  const resetSelection = () => {
-    setSelectedNodeId(null);
-    setSelectedEdgeId(null);
-  };
-
-  const handleNewProject = () => {
-    const emptyProject = createEmptyProject();
-    const { nodes: nextNodes, edges: nextEdges } = projectToDiagram(emptyProject);
-    replaceDiagram(nextNodes, nextEdges);
-    resetSelection();
-  };
-
-  const handleOpenDialog = () => {
-    setProjectDialog({ mode: "open", text: "", error: undefined });
-  };
-
-  const handleSaveDialog = (mode: "save" | "export") => {
-    const json = serializeProject(diagramToProject());
-    setProjectDialog({ mode, text: json, error: undefined });
-  };
-
-  const closeProjectDialog = () => setProjectDialog({ mode: null, text: "", error: undefined });
-
-  const applyOpenProject = () => {
-    try {
-      const project = parseProject(projectDialog.text);
-      const { nodes: nextNodes, edges: nextEdges } = projectToDiagram(project);
-      replaceDiagram(nextNodes, nextEdges);
-      resetSelection();
-      closeProjectDialog();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to load project";
-      setProjectDialog((prev) => ({ ...prev, error: message }));
-    }
   };
 
   type NodeData = { type?: BlockType; label?: string; rating?: Block["rating"] };
@@ -397,10 +279,10 @@ function App() {
   return (
     <Box className="app-root">
       <HeaderBar
-        onNew={handleNewProject}
-        onOpen={handleOpenDialog}
-        onSave={() => handleSaveDialog("save")}
-        onExport={() => handleSaveDialog("export")}
+        onNew={openNewProject}
+        onOpen={openDialog}
+        onSave={() => openSaveOrExport("save")}
+        onExport={() => openSaveOrExport("export")}
       />
 
       <Box className="app-body">
@@ -467,15 +349,13 @@ function App() {
       <StatusBar errors={errors} warnings={warnings} />
 
       <ProjectDialog
-        mode={projectDialog.mode}
-        text={projectDialog.text}
-        error={projectDialog.error}
-        onChangeText={(text) => setProjectDialog((prev) => ({ ...prev, text }))}
-        onClose={closeProjectDialog}
+        mode={dialogState.mode}
+        text={dialogState.text}
+        error={dialogState.error}
+        onChangeText={setDialogText}
+        onClose={closeDialog}
         onLoad={applyOpenProject}
-        onCopy={() => {
-          if (navigator?.clipboard?.writeText) navigator.clipboard.writeText(projectDialog.text);
-        }}
+        onCopy={copyDialogText}
       />
     </Box>
   );
