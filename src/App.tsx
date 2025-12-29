@@ -18,6 +18,7 @@ import StatusBar from "./components/StatusBar";
 import ProjectDialog from "./components/ProjectDialog";
 import { useProjectIO } from "./hooks/useProjectIO";
 import { useNodeEditing } from "./hooks/useNodeEditing";
+import { defaultRatings } from "./lib/ratingHelpers";
 import "./App.css";
 import "reactflow/dist/style.css";
 
@@ -58,7 +59,7 @@ function App() {
     handleTypeCRatingChange,
     handleDeleteSelected,
     resetSelection,
-  } = useNodeEditing({ nodes, edges, setNodes, deleteItems });
+  } = useNodeEditing({ nodes, edges, setNodes, deleteItems, defaultRatings });
   const {
     dialogState,
     setDialogText,

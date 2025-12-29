@@ -10,9 +10,16 @@ type UseNodeEditingArgs = {
   edges: Edge[];
   setNodes: (updater: (prev: Node[]) => Node[]) => void;
   deleteItems: (nodeIds: string[], edgeIds: string[]) => void;
+  defaultRatings: Record<BlockType, Block["rating"]>;
 };
 
-export const useNodeEditing = ({ nodes, edges, setNodes, deleteItems }: UseNodeEditingArgs) => {
+export const useNodeEditing = ({
+  nodes,
+  edges,
+  setNodes,
+  deleteItems,
+  defaultRatings,
+}: UseNodeEditingArgs) => {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
 
@@ -45,10 +52,7 @@ export const useNodeEditing = ({ nodes, edges, setNodes, deleteItems }: UseNodeE
     );
   };
 
-  const handleNodeTypeChange = (
-    value: BlockType,
-    defaultRatings: Record<BlockType, Block["rating"]>,
-  ) => {
+  const handleNodeTypeChange = (value: BlockType) => {
     if (!selectedNodeId) return;
     setNodes((prev) =>
       prev.map((n) =>
