@@ -2,15 +2,30 @@ import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
-import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+import { Background, Controls, ReactFlow, addEdge, useEdgesState, useNodesState } from "reactflow";
 import "./App.css";
+import "reactflow/dist/style.css";
 
 const actions = ["New", "Open", "Save", "Export", "Undo", "Redo"];
 
 function App() {
+  const initialNodes = [
+    { id: "source", position: { x: 150, y: 120 }, data: { label: "Power Source (Type C)" } },
+    { id: "breaker", position: { x: 450, y: 120 }, data: { label: "Breaker (Type A)" } },
+    { id: "load", position: { x: 750, y: 120 }, data: { label: "Load (Type B)" } },
+  ];
+
+  const initialEdges = [
+    { id: "e1-2", source: "source", target: "breaker" },
+    { id: "e2-3", source: "breaker", target: "load" },
+  ];
+
+  const [nodes, , onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
   return (
     <Box className="app-root">
       <AppBar position="static" className="app-bar" elevation={1}>
@@ -47,15 +62,18 @@ function App() {
           </Stack>
         </Box>
 
-        <Box className="canvas-area">
-          <Paper variant="outlined" className="canvas-placeholder">
-            <Typography variant="subtitle1" fontWeight={600}>
-              Canvas
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              React Flow will render here
-            </Typography>
-          </Paper>
+        <Box className="canvas-area" component="section">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={(connection) => setEdges((eds) => addEdge(connection, eds))}
+            fitView
+          >
+            <Background gap={16} size={1} color="rgba(0,0,0,0.1)" />
+            <Controls position="top-right" />
+          </ReactFlow>
         </Box>
 
         <Box className="panel right-panel">
