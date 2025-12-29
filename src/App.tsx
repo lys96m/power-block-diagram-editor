@@ -39,8 +39,6 @@ import { validateBlockOnNet } from "./services/validation";
 import "./App.css";
 import "reactflow/dist/style.css";
 
-const actions = ["New", "Open", "Save", "Export", "Undo", "Redo"];
-
 const SmoothEdge = (props: EdgeProps) => {
   const [path] = getSmoothStepPath({
     sourceX: props.sourceX,
