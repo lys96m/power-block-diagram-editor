@@ -6,11 +6,6 @@ import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import Alert from "@mui/material/Alert";
 import {
   Background,
   ConnectionLineType,
@@ -44,6 +39,7 @@ import {
 import { validateBlockOnNet } from "./services/validation";
 import "./App.css";
 import "reactflow/dist/style.css";
+import ProjectDialog, { type ProjectDialogMode } from "./components/ProjectDialog";
 
 const SmoothEdge = (props: EdgeProps) => {
   const [path] = getSmoothStepPath({
@@ -89,7 +85,7 @@ function App() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [projectDialog, setProjectDialog] = useState<{
-    mode: "open" | "save" | "export" | null;
+    mode: ProjectDialogMode;
     text: string;
     error?: string;
   }>({ mode: null, text: "" });
@@ -838,67 +834,17 @@ function App() {
         </Typography>
       </Box>
 
-      <Dialog
-        open={projectDialog.mode !== null}
+      <ProjectDialog
+        mode={projectDialog.mode}
+        text={projectDialog.text}
+        error={projectDialog.error}
+        onChangeText={(text) => setProjectDialog((prev) => ({ ...prev, text }))}
         onClose={closeProjectDialog}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>
-          {projectDialog.mode === "open"
-            ? "Open project (JSON)"
-            : projectDialog.mode === "save"
-              ? "Save project (JSON copy)"
-              : "Export project (JSON copy)"}
-        </DialogTitle>
-        <DialogContent dividers>
-          {projectDialog.mode === "open" ? (
-            <Typography variant="body2" gutterBottom>
-              project.json を貼り付けて「Load」を押してください。
-            </Typography>
-          ) : (
-            <Typography variant="body2" gutterBottom>
-              JSON をコピーして保存してください（ダウンロードは未実装）。
-            </Typography>
-          )}
-          <TextField
-            fullWidth
-            multiline
-            minRows={12}
-            value={projectDialog.text}
-            onChange={(e) => setProjectDialog((prev) => ({ ...prev, text: e.target.value }))}
-            disabled={projectDialog.mode !== "open"}
-          />
-          {projectDialog.error && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {projectDialog.error}
-            </Alert>
-          )}
-          {projectDialog.mode === "export" && !projectDialog.error && (
-            <Alert severity="info" sx={{ mt: 2 }}>
-              Export (JSON コピー) のみ対応中。ダウンロードは後続対応。
-            </Alert>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeProjectDialog}>Close</Button>
-          {projectDialog.mode === "open" ? (
-            <Button variant="contained" onClick={applyOpenProject}>
-              Load
-            </Button>
-          ) : (
-            <Button
-              variant="contained"
-              onClick={() => {
-                if (navigator?.clipboard?.writeText)
-                  navigator.clipboard.writeText(projectDialog.text);
-              }}
-            >
-              Copy JSON
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+        onLoad={applyOpenProject}
+        onCopy={() => {
+          if (navigator?.clipboard?.writeText) navigator.clipboard.writeText(projectDialog.text);
+        }}
+      />
     </Box>
   );
 }
