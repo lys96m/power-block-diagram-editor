@@ -131,7 +131,10 @@ const deriveBlockCurrent = (
       return { issues, current: block.rating.P_in / block.rating.V_in, uncertain: false };
     }
     return {
-      issues: [...issues, issue("warn", "Load current undetermined (I_in and P_in missing)", block.id)],
+      issues: [
+        ...issues,
+        issue("warn", "Load current undetermined (I_in and P_in missing)", block.id),
+      ],
       current: undefined,
       uncertain: true,
     };
@@ -140,7 +143,9 @@ const deriveBlockCurrent = (
     const eta = block.rating.eta;
     const outPower =
       block.rating.out.P_out_max ??
-      (block.rating.out.I_out_max != null ? block.rating.out.I_out_max * block.rating.out.V_out : undefined);
+      (block.rating.out.I_out_max != null
+        ? block.rating.out.I_out_max * block.rating.out.V_out
+        : undefined);
     if (eta == null || eta <= 0 || outPower == null) {
       return { issues, current: undefined, uncertain: false };
     }
