@@ -162,21 +162,21 @@ function App() {
     );
   };
 
-const toNumberOrUndefined = (value: string): number | undefined => {
-  if (value === "") return undefined;
-  const num = Number(value);
-  return Number.isNaN(num) ? undefined : Math.round(num * 100) / 100;
-};
+  const toNumberOrUndefined = (value: string): number | undefined => {
+    if (value === "") return undefined;
+    const num = Number(value);
+    return Number.isNaN(num) ? undefined : Math.round(num * 100) / 100;
+  };
 
-const toPhase = (value: number | undefined): Phase | undefined => {
-  if (value === 0 || value === 1 || value === 3) return value;
-  return undefined;
-};
+  const toPhase = (value: number | undefined): Phase | undefined => {
+    if (value === 0 || value === 1 || value === 3) return value;
+    return undefined;
+  };
 
-const handleTypeARatingChange = (field: keyof RatingA, value: number | undefined) => {
-  if (!selectedNodeId) return;
-  setNodes((prev) =>
-    prev.map((n) => {
+  const handleTypeARatingChange = (field: keyof RatingA, value: number | undefined) => {
+    if (!selectedNodeId) return;
+    setNodes((prev) =>
+      prev.map((n) => {
         if (n.id !== selectedNodeId) return n;
         const data = (n.data ?? {}) as NodeData;
         if (data.type !== "A") return n;
@@ -195,7 +195,7 @@ const handleTypeARatingChange = (field: keyof RatingA, value: number | undefined
         return { ...n, data: { ...data, rating } };
       }),
     );
-};
+  };
 
   const handleTypeBRatingChange = (field: keyof RatingB, value: number | undefined) => {
     if (!selectedNodeId) return;
@@ -219,7 +219,7 @@ const handleTypeARatingChange = (field: keyof RatingA, value: number | undefined
         return { ...n, data: { ...data, rating } };
       }),
     );
-};
+  };
 
   const ensureTypeCRating = (rating?: Block["rating"]): RatingC => {
     const fallback = defaultRatings.C as RatingC;
@@ -448,7 +448,9 @@ const handleTypeARatingChange = (field: keyof RatingA, value: number | undefined
                         ((selectedNode.data as NodeData)?.rating as RatingA | undefined)?.phase ??
                         ""
                       }
-                      onChange={(e) => handleTypeARatingChange("phase", toPhase(Number(e.target.value)))}
+                      onChange={(e) =>
+                        handleTypeARatingChange("phase", toPhase(Number(e.target.value)))
+                      }
                     >
                       {[0, 1, 3].map((phase) => (
                         <MenuItem key={phase} value={phase}>
@@ -504,7 +506,9 @@ const handleTypeARatingChange = (field: keyof RatingA, value: number | undefined
                         ((selectedNode.data as NodeData)?.rating as RatingB | undefined)?.phase ??
                         ""
                       }
-                      onChange={(e) => handleTypeBRatingChange("phase", toPhase(Number(e.target.value)))}
+                      onChange={(e) =>
+                        handleTypeBRatingChange("phase", toPhase(Number(e.target.value)))
+                      }
                     >
                       {[0, 1, 3].map((phase) => (
                         <MenuItem key={phase} value={phase}>
@@ -566,17 +570,21 @@ const handleTypeARatingChange = (field: keyof RatingA, value: number | undefined
                         />
                         <TextField
                           size="small"
-                        label="Phase_in"
-                        select
-                        value={rating.in.phase_in ?? ""}
-                        onChange={(e) =>
-                          handleTypeCRatingChange("in", "phase_in", toPhase(Number(e.target.value)))
-                        }
-                      >
-                        {[0, 1, 3].map((phase) => (
-                          <MenuItem key={phase} value={phase}>
-                            {phase}
-                          </MenuItem>
+                          label="Phase_in"
+                          select
+                          value={rating.in.phase_in ?? ""}
+                          onChange={(e) =>
+                            handleTypeCRatingChange(
+                              "in",
+                              "phase_in",
+                              toPhase(Number(e.target.value)),
+                            )
+                          }
+                        >
+                          {[0, 1, 3].map((phase) => (
+                            <MenuItem key={phase} value={phase}>
+                              {phase}
+                            </MenuItem>
                           ))}
                         </TextField>
 
@@ -627,17 +635,21 @@ const handleTypeARatingChange = (field: keyof RatingA, value: number | undefined
                         />
                         <TextField
                           size="small"
-                        label="Phase_out"
-                        select
-                        value={rating.out.phase_out ?? ""}
-                        onChange={(e) =>
-                          handleTypeCRatingChange("out", "phase_out", toPhase(Number(e.target.value)))
-                        }
-                      >
-                        {[0, 1, 3].map((phase) => (
-                          <MenuItem key={phase} value={phase}>
-                            {phase}
-                          </MenuItem>
+                          label="Phase_out"
+                          select
+                          value={rating.out.phase_out ?? ""}
+                          onChange={(e) =>
+                            handleTypeCRatingChange(
+                              "out",
+                              "phase_out",
+                              toPhase(Number(e.target.value)),
+                            )
+                          }
+                        >
+                          {[0, 1, 3].map((phase) => (
+                            <MenuItem key={phase} value={phase}>
+                              {phase}
+                            </MenuItem>
                           ))}
                         </TextField>
 
