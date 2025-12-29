@@ -10,15 +10,13 @@ import {
   ConnectionLineType,
   Controls,
   ReactFlow,
-  addEdge,
-  useEdgesState,
-  useNodesState,
   BaseEdge,
   getSmoothStepPath,
 } from "reactflow";
 import type { Edge, EdgeProps } from "reactflow";
 import { useMemo, useState } from "react";
-import type { ValidationResult } from "./types/diagram";
+import TextField from "@mui/material/TextField";
+import { useDiagramState } from "./state/DiagramState";
 import "./App.css";
 import "reactflow/dist/style.css";
 
@@ -39,20 +37,9 @@ const SmoothEdge = (props: EdgeProps) => {
 };
 
 function App() {
-  const initialNodes = [
-    { id: "source", position: { x: 150, y: 120 }, data: { label: "Power Source (Type C)" } },
-    { id: "breaker", position: { x: 450, y: 120 }, data: { label: "Breaker (Type A)" } },
-    { id: "load", position: { x: 750, y: 120 }, data: { label: "Load (Type B)" } },
-  ];
-
-  const initialEdges: Edge[] = [
-    { id: "e1-2", source: "source", target: "breaker", type: "smooth" },
-    { id: "e2-3", source: "breaker", target: "load", type: "smooth" },
-  ];
-
-  const [nodes, , onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const [validationResults] = useState<ValidationResult[]>([]);
+  const { nodes, edges, setNodes, onNodesChange, onEdgesChange, onConnect } = useDiagramState();
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
 
   const edgeTypes = { smooth: SmoothEdge };
 
@@ -88,18 +75,36 @@ function App() {
     return hasPath([...existing, candidate], target, source);
   };
 
-  const { errors, warnings } = useMemo(
-    () =>
-      validationResults.reduce(
-        (acc, cur) => {
-          if (cur.level === "error") acc.errors += 1;
-          if (cur.level === "warn") acc.warnings += 1;
-          return acc;
-        },
-        { errors: 0, warnings: 0 },
-      ),
-    [validationResults],
+  const selectedNode = useMemo(
+    () => nodes.find((n) => n.id === selectedNodeId) ?? null,
+    [nodes, selectedNodeId],
   );
+  const selectedEdge = useMemo(
+    () => edges.find((e) => e.id === selectedEdgeId) ?? null,
+    [edges, selectedEdgeId],
+  );
+
+  const handleSelectionChange = ({
+    nodes: selectedNodes,
+    edges: selectedEdges,
+  }: {
+    nodes: typeof nodes;
+    edges: typeof edges;
+  }) => {
+    setSelectedNodeId(selectedNodes[0]?.id ?? null);
+    setSelectedEdgeId(selectedEdges[0]?.id ?? null);
+  };
+
+  const handleNodeLabelChange = (value: string) => {
+    setNodes((prev) =>
+      prev.map((n) =>
+        n.id === selectedNodeId ? { ...n, data: { ...(n.data ?? {}), label: value } } : n,
+      ),
+    );
+  };
+
+  const errors = 0;
+  const warnings = 0;
 
   return (
     <Box className="app-root">
@@ -143,16 +148,13 @@ function App() {
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            onConnect={(connection) =>
-              setEdges((eds) => {
-                if (wouldCreateCycle(eds, connection.source, connection.target)) {
-                  return eds;
-                }
-                return addEdge({ ...connection, type: "smooth" }, eds);
-              })
-            }
+            onConnect={(connection) => {
+              if (wouldCreateCycle(edges, connection.source, connection.target)) return;
+              onConnect(connection);
+            }}
             edgeTypes={edgeTypes}
             connectionLineType={ConnectionLineType.SmoothStep}
+            onSelectionChange={handleSelectionChange}
             snapToGrid
             snapGrid={[16, 16]}
             fitView
@@ -168,9 +170,34 @@ function App() {
           </Typography>
           <Divider />
           <Stack spacing={1} mt={2}>
-            <Typography variant="body2" color="text.secondary">
-              Nothing selected
-            </Typography>
+            {selectedNode && (
+              <>
+                <Typography variant="body2" fontWeight={600}>
+                  Node: {selectedNode.id}
+                </Typography>
+                <TextField
+                  size="small"
+                  label="Label"
+                  value={selectedNode.data?.label ?? ""}
+                  onChange={(e) => handleNodeLabelChange(e.target.value)}
+                />
+              </>
+            )}
+            {selectedEdge && (
+              <>
+                <Typography variant="body2" fontWeight={600}>
+                  Edge: {selectedEdge.id}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {selectedEdge.source} → {selectedEdge.target}
+                </Typography>
+              </>
+            )}
+            {!selectedNode && !selectedEdge && (
+              <Typography variant="body2" color="text.secondary">
+                Nothing selected
+              </Typography>
+            )}
           </Stack>
 
           <Divider sx={{ my: 2 }} />
