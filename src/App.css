@@ -29,6 +29,8 @@
   gap: 0.5rem;
   padding: 1rem;
   background: #ffffff;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .left-panel {
