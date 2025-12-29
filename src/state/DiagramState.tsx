@@ -20,6 +20,7 @@ type DiagramState = {
   onConnect: OnConnect;
   addNode: (kind: "A" | "B" | "C") => void;
   deleteItems: (nodeIds: string[], edgeIds: string[]) => void;
+  updateNodeData: (nodeId: string, data: Partial<Node["data"]>) => void;
 };
 
 const DiagramStateContext = createContext<DiagramState | null>(null);
@@ -100,6 +101,12 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
     setNodes((prev) => prev.filter((n) => !nodeIds.includes(n.id)));
   };
 
+  const updateNodeData = (nodeId: string, data: Partial<Node["data"]>) => {
+    setNodes((prev) =>
+      prev.map((n) => (n.id === nodeId ? { ...n, data: { ...(n.data ?? {}), ...data } } : n)),
+    );
+  };
+
   return (
     <DiagramStateContext.Provider
       value={{
@@ -112,6 +119,7 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
         onConnect,
         addNode,
         deleteItems,
+        updateNodeData,
       }}
     >
       {children}
