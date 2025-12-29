@@ -303,17 +303,14 @@ function App() {
 
   const diagramToProject = (): Project => {
     const now = new Date().toISOString();
-    return {
-      schema_version: "1.0.0",
-      meta: { title: "Untitled", created_at: now, updated_at: now, author: "unknown" },
-      nets: [],
-      blocks: nodes.map((n) => {
-        const data = (n.data ?? {}) as NodeData;
-        const type = data.type ?? "A";
-        const rating = (data.rating as Block["rating"]) ?? defaultRatings[type];
+    const toBlock = (n: Node): Block => {
+      const data = (n.data ?? {}) as NodeData;
+      const type = (data.type as BlockType | undefined) ?? "A";
+      if (type === "A") {
+        const rating: RatingA = (data.rating as RatingA) ?? (defaultRatings.A as RatingA);
         return {
           id: n.id,
-          type,
+          type: "A",
           name: data.label ?? n.id,
           rating,
           ports: [
@@ -321,12 +318,40 @@ function App() {
             { id: "out", role: "power_out", direction: "out" },
           ],
         };
-      }),
+      }
+      if (type === "B") {
+        const rating: RatingB = (data.rating as RatingB) ?? (defaultRatings.B as RatingB);
+        return {
+          id: n.id,
+          type: "B",
+          name: data.label ?? n.id,
+          rating,
+          ports: [{ id: "in", role: "power_in", direction: "in" }],
+        };
+      }
+      const rating: RatingC = ensureTypeCRating(data.rating);
+      return {
+        id: n.id,
+        type: "C",
+        name: data.label ?? n.id,
+        rating,
+        ports: [
+          { id: "in", role: "power_in", direction: "in" },
+          { id: "out", role: "power_out", direction: "out" },
+        ],
+      };
+    };
+
+    return {
+      schema_version: "1.0.0",
+      meta: { title: "Untitled", created_at: now, updated_at: now, author: "unknown" },
+      nets: [],
+      blocks: nodes.map((n) => toBlock(n)),
       connections: edges.map((e, idx) => ({
         from: `${e.source}:out`,
         to: `${e.target}:in`,
         net: null,
-        label: e.label ?? `conn-${idx + 1}`,
+        label: typeof e.label === "string" ? e.label : `conn-${idx + 1}`,
       })),
       layout: {
         blocks: nodes.reduce<Record<string, { x: number; y: number; w: number; h: number }>>(
