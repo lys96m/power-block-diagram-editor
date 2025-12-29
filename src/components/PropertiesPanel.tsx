@@ -149,9 +149,7 @@ export const PropertiesPanel = ({
                   type="number"
                   inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
                   value={rating.in.V_in ?? ""}
-                  onChange={(e) =>
-                    onTypeCChange("in", "V_in", toNumberOrUndefined(e.target.value))
-                  }
+                  onChange={(e) => onTypeCChange("in", "V_in", toNumberOrUndefined(e.target.value))}
                 />
                 <TextField
                   size="small"

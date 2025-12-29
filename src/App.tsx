@@ -19,11 +19,7 @@ import type {
   Project,
 } from "./types/diagram";
 import { createEmptyProject, parseProject, serializeProject } from "./services/projectIO";
-import {
-  defaultRatings,
-  ensureTypeCRating,
-  toPhase,
-} from "./lib/ratingHelpers";
+import { defaultRatings, ensureTypeCRating, toPhase } from "./lib/ratingHelpers";
 import { validateBlockOnNet } from "./services/validation";
 import HeaderBar from "./components/HeaderBar";
 import DiagramCanvas from "./components/DiagramCanvas";
