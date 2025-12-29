@@ -5,7 +5,15 @@ import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import { Background, Controls, ReactFlow, addEdge, useEdgesState, useNodesState } from "reactflow";
+import {
+  Background,
+  ConnectionLineType,
+  Controls,
+  ReactFlow,
+  addEdge,
+  useEdgesState,
+  useNodesState,
+} from "reactflow";
 import "./App.css";
 import "reactflow/dist/style.css";
 
@@ -25,6 +33,8 @@ function App() {
 
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  const defaultEdgeOptions = { type: "straight" as const };
 
   return (
     <Box className="app-root">
@@ -69,6 +79,10 @@ function App() {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={(connection) => setEdges((eds) => addEdge(connection, eds))}
+            connectionLineType={ConnectionLineType.Straight}
+            defaultEdgeOptions={defaultEdgeOptions}
+            snapToGrid
+            snapGrid={[16, 16]}
             fitView
           >
             <Background gap={16} size={1} color="rgba(0,0,0,0.1)" />
