@@ -24,9 +24,23 @@ import { useMemo, useState } from "react";
 import TextField from "@mui/material/TextField";
 import { useDiagramState } from "./state/DiagramState";
 import { wouldCreateCycle } from "./lib/graph";
-import type { ValidationResult, Block, BlockType, Net, RatingA, RatingB, RatingC, Project } from "./types/diagram";
+import type {
+  ValidationResult,
+  Block,
+  BlockType,
+  Net,
+  RatingA,
+  RatingB,
+  RatingC,
+  Project,
+} from "./types/diagram";
 import { createEmptyProject, parseProject, serializeProject } from "./services/projectIO";
-import { defaultRatings, ensureTypeCRating, toNumberOrUndefined, toPhase } from "./lib/ratingHelpers";
+import {
+  defaultRatings,
+  ensureTypeCRating,
+  toNumberOrUndefined,
+  toPhase,
+} from "./lib/ratingHelpers";
 import { validateBlockOnNet } from "./services/validation";
 import "./App.css";
 import "reactflow/dist/style.css";
