@@ -21,3 +21,4 @@
 
 - 主要コマンド: `npm run format`, `npm run lint`, `npm test`, `npm run build`.
 - 依存更新や設計変更は関連ドキュメント（README, CONTRIBUTING, docs/）を更新する。
+- UI 変更を伴う場合は `docs/ui.md`、手動確認ポイントは `docs/testing.md` を忘れず更新する。

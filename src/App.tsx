@@ -51,6 +51,8 @@ function App() {
     addNet,
     updateEdgeNet,
     updateNetLabel,
+    updateNetAttributes,
+    removeNet,
   } = useDiagramState();
   const {
     selectedNode,
@@ -76,19 +78,39 @@ function App() {
   } = useProjectIO({ nodes, edges, nets, replaceDiagram, resetSelection });
 
   const edgeTypes = { smooth: SmoothEdge };
+  const netEdgeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    edges.forEach((e) => {
+      const netId = (e.data as { netId?: string | null } | undefined)?.netId;
+      if (!netId) return;
+      counts[netId] = (counts[netId] ?? 0) + 1;
+    });
+    return counts;
+  }, [edges]);
 
   const validationSummary = useMemo(() => {
     const issues: ValidationResult[] = [];
-    const blocks: Block[] = [];
     const labelLookup: Record<string, string> = {};
-    const connectedNodeIds = new Set<string>();
     const unassignedEdges = edges.filter(
       (e) => !(e.data as { netId?: string } | undefined)?.netId,
     ).length;
+    const netMap = nets.reduce<Record<string, (typeof nets)[number]>>((acc, net) => {
+      acc[net.id] = net;
+      return acc;
+    }, {});
+    const nodeNets = new Map<string, Set<string>>();
+    const netBlocks = new Map<string, Block[]>();
+    const invalidNetRefs: string[] = [];
 
     edges.forEach((edge) => {
-      connectedNodeIds.add(edge.source);
-      connectedNodeIds.add(edge.target);
+      const netId = (edge.data as { netId?: string } | undefined)?.netId;
+      if (netId) {
+        if (!netMap[netId] && !invalidNetRefs.includes(netId)) invalidNetRefs.push(netId);
+        if (!nodeNets.has(edge.source)) nodeNets.set(edge.source, new Set());
+        if (!nodeNets.has(edge.target)) nodeNets.set(edge.target, new Set());
+        nodeNets.get(edge.source)?.add(netId);
+        nodeNets.get(edge.target)?.add(netId);
+      }
     });
 
     nodes.forEach((node) => {
@@ -108,28 +130,55 @@ function App() {
         return;
       }
 
-      blocks.push({
+      const block: Block = {
         id: node.id,
         type,
         name: label,
         rating,
         ports: [],
-      } as Block);
+      } as Block;
+
+      const netsForNode = nodeNets.get(node.id);
+      const targetNetIds =
+        netsForNode && netsForNode.size > 0
+          ? Array.from(netsForNode)
+          : nets.length > 0
+            ? [nets[0].id]
+            : [defaultNet.id];
+
+      targetNetIds.forEach((netId) => {
+        const arr = netBlocks.get(netId) ?? [];
+        if (!arr.find((b) => b.id === block.id)) arr.push(block);
+        netBlocks.set(netId, arr);
+      });
     });
 
-    const primaryNet = nets[0] ?? defaultNet;
-    const { issues: netIssues, uncertainLoads } = validateNet(blocks, primaryNet);
-    const allIssues = [...issues, ...netIssues];
-    const errors = allIssues.filter((r) => r.level === "error").length;
-    const warnings = allIssues.filter((r) => r.level === "warn").length;
+    invalidNetRefs.forEach((netId) => {
+      issues.push({
+        id: `warn-missing-net-${netId}`,
+        level: "warn",
+        message: `Edge references missing net: ${netId}`,
+      });
+    });
+
+    let totalUncertain = 0;
+    netBlocks.forEach((blocksForNet, netId) => {
+      const net = netMap[netId] ?? defaultNet;
+      const { issues: netIssues, uncertainLoads } = validateNet(blocksForNet, net);
+      issues.push(...netIssues);
+      totalUncertain += uncertainLoads;
+    });
+
+    const errors = issues.filter((r) => r.level === "error").length;
+    const warnings = issues.filter((r) => r.level === "warn").length;
 
     return {
-      issues: allIssues,
+      issues,
       labelLookup,
       stats: {
         errors,
         warnings,
-        uncertainLoads,
+        uncertainLoads: totalUncertain,
         nets: nets.length || 1,
         unassignedNets: unassignedEdges,
       },
@@ -189,6 +238,7 @@ function App() {
             selectedEdge={selectedEdge}
             typeLabels={typeLabels}
             nets={nets}
+            netEdgeCounts={netEdgeCounts}
             onLabelChange={handleNodeLabelChange}
             onTypeChange={handleNodeTypeChange}
             onTypeAChange={handleTypeARatingChange}
@@ -200,6 +250,8 @@ function App() {
               updateEdgeNet(edgeId, netId);
             }}
             onRenameNet={updateNetLabel}
+            onUpdateNetAttributes={updateNetAttributes}
+            onDeleteNet={removeNet}
             onDeleteSelected={handleDeleteSelected}
           />
 
