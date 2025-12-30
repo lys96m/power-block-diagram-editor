@@ -9,15 +9,15 @@ import { useMemo } from "react";
 import { useDiagramState } from "./state/DiagramState";
 import { wouldCreateCycle } from "./lib/graph";
 import { defaultNet, typeLabels } from "./lib/constants";
-import type { ValidationResult, Block, BlockType } from "./types/diagram";
-import { validateBlockOnNet } from "./services/validation";
+import type { ValidationResult, Block } from "./types/diagram";
+import { validateNet } from "./services/validation";
 import HeaderBar from "./components/HeaderBar";
 import DiagramCanvas from "./components/DiagramCanvas";
 import PropertiesPanel from "./components/PropertiesPanel";
 import StatusBar from "./components/StatusBar";
 import ProjectDialog from "./components/ProjectDialog";
 import { useProjectIO } from "./hooks/useProjectIO";
-import { useNodeEditing } from "./hooks/useNodeEditing";
+import { useNodeEditing, type NodeData } from "./hooks/useNodeEditing";
 import { defaultRatings } from "./lib/ratingHelpers";
 import "./App.css";
 import "reactflow/dist/style.css";
@@ -73,16 +73,26 @@ function App() {
 
   const edgeTypes = { smooth: SmoothEdge };
 
-  type NodeData = { type?: BlockType; label?: string; rating?: Block["rating"] };
+  const validationSummary = useMemo(() => {
+    const issues: ValidationResult[] = [];
+    const blocks: Block[] = [];
+    const labelLookup: Record<string, string> = {};
+    const connectedNodeIds = new Set<string>();
 
-  const validationResults = useMemo(() => {
-    const results: ValidationResult[] = [];
+    edges.forEach((edge) => {
+      connectedNodeIds.add(edge.source);
+      connectedNodeIds.add(edge.target);
+    });
+
     nodes.forEach((node) => {
       const data = (node.data ?? {}) as NodeData;
       const type = data.type;
       const rating = data.rating;
+      const label = data.label ?? node.id;
+      labelLookup[node.id] = label;
+
       if (!type || !rating) {
-        results.push({
+        issues.push({
           id: `warn-${node.id}-missing-type`,
           level: "warn",
           message: "Missing type or rating",
@@ -90,21 +100,36 @@ function App() {
         });
         return;
       }
-      const block: Block = {
+
+      blocks.push({
         id: node.id,
         type,
-        name: data.label ?? node.id,
+        name: label,
         rating,
         ports: [],
-      } as Block;
-      const { issues } = validateBlockOnNet(block, defaultNet);
-      results.push(...issues);
+      } as Block);
     });
-    return results;
-  }, [nodes]);
 
-  const errors = validationResults.filter((r) => r.level === "error").length;
-  const warnings = validationResults.filter((r) => r.level === "warn").length;
+    const { issues: netIssues, uncertainLoads } = validateNet(blocks, defaultNet);
+    const allIssues = [...issues, ...netIssues];
+    const errors = allIssues.filter((r) => r.level === "error").length;
+    const warnings = allIssues.filter((r) => r.level === "warn").length;
+    const unassignedNets = nodes.filter((node) => !connectedNodeIds.has(node.id)).length;
+
+    return {
+      issues: allIssues,
+      labelLookup,
+      stats: {
+        errors,
+        warnings,
+        uncertainLoads,
+        nets: 1,
+        unassignedNets,
+      },
+    };
+  }, [nodes, edges]);
+
+  const { issues: validationResults, stats: validationStats, labelLookup } = validationSummary;
 
   return (
     <Box className="app-root">
@@ -169,14 +194,60 @@ function App() {
             Validation
           </Typography>
           <Stack spacing={0.5} mt={1}>
-            <Typography variant="body2">Errors: 0</Typography>
-            <Typography variant="body2">Warnings: 0</Typography>
-            <Typography variant="body2">Uncertain loads: 0</Typography>
+            <Typography variant="body2">Errors: {validationStats.errors}</Typography>
+            <Typography variant="body2">Warnings: {validationStats.warnings}</Typography>
+            <Typography variant="body2">
+              Uncertain loads: {validationStats.uncertainLoads}
+            </Typography>
           </Stack>
+
+          <Box mt={1}>
+            <Typography variant="subtitle2" fontWeight={600}>
+              Details
+            </Typography>
+            <Stack spacing={0.5} mt={0.5}>
+              {validationResults.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No validation issues.
+                </Typography>
+              ) : (
+                validationResults.map((issue) => {
+                  const targetLabel = issue.targetId
+                    ? (labelLookup[issue.targetId] ?? issue.targetId)
+                    : null;
+                  const prefix =
+                    issue.level === "error" ? "Error" : issue.level === "warn" ? "Warning" : "Info";
+                  return (
+                    <Typography
+                      key={issue.id}
+                      variant="body2"
+                      sx={{
+                        color:
+                          issue.level === "error"
+                            ? "error.main"
+                            : issue.level === "warn"
+                              ? "warning.main"
+                              : "text.secondary",
+                      }}
+                    >
+                      {prefix}: {issue.message}
+                      {targetLabel ? ` (${targetLabel})` : ""}
+                    </Typography>
+                  );
+                })
+              )}
+            </Stack>
+          </Box>
         </Box>
       </Box>
 
-      <StatusBar errors={errors} warnings={warnings} />
+      <StatusBar
+        errors={validationStats.errors}
+        warnings={validationStats.warnings}
+        nets={validationStats.nets}
+        unassignedNets={validationStats.unassignedNets}
+        uncertainLoads={validationStats.uncertainLoads}
+      />
 
       <ProjectDialog
         mode={dialogState.mode}
