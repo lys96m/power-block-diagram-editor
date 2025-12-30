@@ -4,7 +4,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type { Edge, Node } from "reactflow";
-import type { Block, BlockType, RatingA, RatingB, RatingC } from "../types/diagram";
+import type { Block, BlockType, Net, RatingA, RatingB, RatingC } from "../types/diagram";
 import { ensureTypeCRating, toNumberOrUndefined, toPhase } from "../lib/ratingHelpers";
 
 type NodeData = { type?: BlockType; label?: string; rating?: Block["rating"] };
@@ -13,6 +13,7 @@ type Props = {
   selectedNode: Node | null;
   selectedEdge: Edge | null;
   typeLabels: Record<BlockType, string>;
+  nets: Net[];
   onLabelChange: (value: string) => void;
   onTypeChange: (value: BlockType) => void;
   onTypeAChange: (field: keyof RatingA, value: number | undefined) => void;
@@ -22,6 +23,9 @@ type Props = {
     field: keyof RatingC["in"] | keyof RatingC["out"] | "eta",
     value: number | undefined,
   ) => void;
+  onEdgeNetChange: (edgeId: string, netId: string | null) => void;
+  onCreateNet: (edgeId: string) => void;
+  onRenameNet: (netId: string, label: string) => void;
   onDeleteSelected: () => void;
 };
 
@@ -29,11 +33,15 @@ export const PropertiesPanel = ({
   selectedNode,
   selectedEdge,
   typeLabels,
+  nets,
   onLabelChange,
   onTypeChange,
   onTypeAChange,
   onTypeBChange,
   onTypeCChange,
+  onEdgeNetChange,
+  onCreateNet,
+  onRenameNet,
   onDeleteSelected,
 }: Props) => (
   <Stack spacing={1} mt={2}>
@@ -258,6 +266,48 @@ export const PropertiesPanel = ({
         <Typography variant="body2" color="text.secondary">
           {selectedEdge.source} → {selectedEdge.target}
         </Typography>
+        <TextField
+          size="small"
+          label="Net"
+          select
+          value={(selectedEdge.data as { netId?: string | null } | undefined)?.netId ?? ""}
+          onChange={(e) =>
+            onEdgeNetChange(selectedEdge.id, e.target.value === "" ? null : e.target.value)
+          }
+        >
+          <MenuItem value="">Unassigned</MenuItem>
+          {nets.map((net) => (
+            <MenuItem key={net.id} value={net.id}>
+              {net.label}
+            </MenuItem>
+          ))}
+        </TextField>
+        {((selectedEdge.data as { netId?: string | null } | undefined)?.netId ?? "") !== "" && (
+          <TextField
+            size="small"
+            label="Net Name"
+            value={
+              nets.find(
+                (net) =>
+                  net.id === (selectedEdge.data as { netId?: string | null } | undefined)?.netId,
+              )?.label ?? ""
+            }
+            onChange={(e) =>
+              onRenameNet(
+                (selectedEdge.data as { netId?: string | null } | undefined)?.netId ?? "",
+                e.target.value,
+              )
+            }
+          />
+        )}
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => onCreateNet(selectedEdge.id)}
+          sx={{ alignSelf: "flex-start" }}
+        >
+          Add Net
+        </Button>
       </>
     )}
     {!selectedNode && !selectedEdge && (

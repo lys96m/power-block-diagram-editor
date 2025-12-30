@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useRef } from "react";
+import { createContext, useContext, useRef, useState } from "react";
 import { addEdge, useEdgesState, useNodesState } from "reactflow";
 import type {
   Edge,
@@ -9,6 +9,8 @@ import type {
   ReactFlowState,
   Node,
 } from "reactflow";
+import type { Net } from "../types/diagram";
+import { defaultNet } from "../lib/constants";
 
 type DiagramState = {
   nodes: Node[];
@@ -21,7 +23,11 @@ type DiagramState = {
   addNode: (kind: "A" | "B" | "C") => void;
   deleteItems: (nodeIds: string[], edgeIds: string[]) => void;
   updateNodeData: (nodeId: string, data: Partial<Node["data"]>) => void;
-  replaceDiagram: (nodes: Node[], edges: Edge[]) => void;
+  replaceDiagram: (nodes: Node[], edges: Edge[], nets: Net[]) => void;
+  nets: Net[];
+  addNet: () => string;
+  updateEdgeNet: (edgeId: string, netId: string | null) => void;
+  updateNetLabel: (netId: string, label: string) => void;
 };
 
 const DiagramStateContext = createContext<DiagramState | null>(null);
@@ -70,6 +76,7 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const nodeCounter = useRef(3);
+  const [nets, setNets] = useState<Net[]>([defaultNet]);
 
   const onConnect: OnConnect = (connection) =>
     setEdges((eds) => addEdge({ ...connection, type: "smooth" }, eds));
@@ -118,10 +125,35 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
     );
   };
 
-  const replaceDiagram = (nextNodes: Node[], nextEdges: Edge[]) => {
+  const replaceDiagram = (nextNodes: Node[], nextEdges: Edge[], nextNets: Net[]) => {
     setNodes(nextNodes);
     setEdges(nextEdges);
+    setNets(nextNets.length > 0 ? nextNets : [defaultNet]);
     nodeCounter.current = nextCounterFromNodes(nextNodes);
+  };
+
+  const addNet = () => {
+    let newId = "";
+    setNets((prev) => {
+      const index = prev.length + 1;
+      newId = `net-${index}`;
+      const label = `Net ${index}`;
+      const next: Net = { ...defaultNet, id: newId, label };
+      return [...prev, next];
+    });
+    return newId;
+  };
+
+  const updateEdgeNet = (edgeId: string, netId: string | null) => {
+    setEdges((prev) =>
+      prev.map((e) =>
+        e.id === edgeId ? { ...e, data: { ...(e.data ?? {}), netId: netId ?? null } } : e,
+      ),
+    );
+  };
+
+  const updateNetLabel = (netId: string, label: string) => {
+    setNets((prev) => prev.map((net) => (net.id === netId ? { ...net, label } : net)));
   };
 
   return (
@@ -138,6 +170,10 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
         deleteItems,
         updateNodeData,
         replaceDiagram,
+        nets,
+        addNet,
+        updateEdgeNet,
+        updateNetLabel,
       }}
     >
       {children}
