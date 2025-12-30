@@ -16,6 +16,7 @@ import DiagramCanvas from "./components/DiagramCanvas";
 import PropertiesPanel from "./components/PropertiesPanel";
 import StatusBar from "./components/StatusBar";
 import ProjectDialog from "./components/ProjectDialog";
+import NetManager from "./components/NetManager";
 import { useProjectIO } from "./hooks/useProjectIO";
 import { useNodeEditing, type NodeData } from "./hooks/useNodeEditing";
 import { defaultRatings } from "./lib/ratingHelpers";
@@ -257,6 +258,16 @@ function App() {
             onUpdateNetAttributes={updateNetAttributes}
             onDeleteNet={removeNet}
             onDeleteSelected={handleDeleteSelected}
+          />
+
+          <Divider sx={{ my: 2 }} />
+          <NetManager
+            nets={nets}
+            netEdgeCounts={netEdgeCounts}
+            addNet={addNet}
+            updateNetLabel={updateNetLabel}
+            updateNetAttributes={updateNetAttributes}
+            removeNet={removeNet}
           />
 
           <Divider sx={{ my: 2 }} />
