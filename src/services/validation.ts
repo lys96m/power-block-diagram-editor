@@ -117,3 +117,72 @@ export const validateBlockOnNet = (
   // Type A は通過扱いのためここでは電圧/相チェックなし。容量チェックは別途実施。
   return { issues: [], derivedCurrent: undefined };
 };
+
+const deriveBlockCurrent = (
+  block: Block,
+  net: Net,
+): { issues: ValidationResult[]; current?: number; uncertain?: boolean } => {
+  const { issues } = validateBlockOnNet(block, net);
+  if (block.type === "B") {
+    if (block.rating.I_in != null) {
+      return { issues, current: block.rating.I_in, uncertain: false };
+    }
+    if (block.rating.P_in != null) {
+      return { issues, current: block.rating.P_in / block.rating.V_in, uncertain: false };
+    }
+    return {
+      issues: [
+        ...issues,
+        issue("warn", "Load current undetermined (I_in and P_in missing)", block.id),
+      ],
+      current: undefined,
+      uncertain: true,
+    };
+  }
+  if (block.type === "C") {
+    const eta = block.rating.eta;
+    const outPower =
+      block.rating.out.P_out_max ??
+      (block.rating.out.I_out_max != null
+        ? block.rating.out.I_out_max * block.rating.out.V_out
+        : undefined);
+    if (eta == null || eta <= 0 || outPower == null) {
+      return { issues, current: undefined, uncertain: false };
+    }
+    const inputCurrent = outPower / eta / block.rating.in.V_in;
+    return { issues, current: inputCurrent, uncertain: false };
+  }
+  return { issues, current: undefined, uncertain: false };
+};
+
+export const validateNet = (
+  blocks: Block[],
+  net: Net,
+): { issues: ValidationResult[]; totalCurrent: number; uncertainLoads: number } => {
+  const issues: ValidationResult[] = [];
+  let totalCurrent = 0;
+  let uncertainLoads = 0;
+
+  blocks.forEach((block) => {
+    const { issues: blockIssues, current, uncertain } = deriveBlockCurrent(block, net);
+    issues.push(...blockIssues);
+    if (uncertain) uncertainLoads += 1;
+    if (current != null) totalCurrent += current;
+  });
+
+  blocks
+    .filter((b): b is Extract<Block, { type: "A" }> => b.type === "A")
+    .forEach((block) => {
+      if (totalCurrent > block.rating.I_max) {
+        issues.push(
+          issue(
+            "error",
+            `I_max exceeded: load=${totalCurrent.toFixed(2)}A limit=${block.rating.I_max}A`,
+            block.id,
+          ),
+        );
+      }
+    });
+
+  return { issues, totalCurrent, uncertainLoads };
+};

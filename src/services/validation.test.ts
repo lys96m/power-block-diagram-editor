@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { isVoltageWithinTolerance, validateBlockOnNet } from "./validation";
-import type { BlockB, BlockC, Net } from "../types/diagram";
+import { isVoltageWithinTolerance, validateBlockOnNet, validateNet } from "./validation";
+import type { BlockA, BlockB, BlockC, Net } from "../types/diagram";
 
 const baseNet: Net = {
   id: "N1",
@@ -101,5 +101,71 @@ describe("validateBlockOnNet - TypeC", () => {
     };
     const { issues } = validateBlockOnNet(block, baseNet);
     expect(issues.some((i) => i.level === "error")).toBe(true);
+  });
+});
+
+describe("validateNet", () => {
+  const net: Net = { id: "N", kind: "AC", voltage: 200, phase: 1, label: "AC200" };
+
+  it("flags Type A I_max exceed based on total current", () => {
+    const typeA: BlockA = {
+      id: "A1",
+      type: "A",
+      name: "Breaker",
+      rating: { V_max: 250, I_max: 5, phase: 1 },
+      ports: [],
+    };
+    const load: BlockB = {
+      id: "B1",
+      type: "B",
+      name: "Load",
+      rating: { V_in: 200, phase: 1, I_in: 6 },
+      ports: [{ id: "in", role: "power_in", direction: "in" }],
+    };
+    const { issues } = validateNet([typeA, load], net);
+    expect(issues.some((i) => i.level === "error" && i.message.includes("I_max exceeded"))).toBe(
+      true,
+    );
+  });
+
+  it("counts uncertain loads when Type B missing I/P", () => {
+    const uncertain: BlockB = {
+      id: "B2",
+      type: "B",
+      name: "Load",
+      rating: { V_in: 200, phase: 1 },
+      ports: [{ id: "in", role: "power_in", direction: "in" }],
+    };
+    const { issues, uncertainLoads } = validateNet([uncertain], net);
+    expect(uncertainLoads).toBe(1);
+    expect(issues.some((i) => i.level === "warn")).toBe(true);
+  });
+
+  it("uses eta when deriving Type C input current", () => {
+    const typeA: BlockA = {
+      id: "A1",
+      type: "A",
+      name: "Breaker",
+      rating: { V_max: 250, I_max: 2, phase: 1 },
+      ports: [],
+    };
+    const converter: BlockC = {
+      id: "C1",
+      type: "C",
+      name: "Converter",
+      rating: {
+        in: { V_in: 200, phase_in: 1 },
+        out: { V_out: 24, phase_out: 0, P_out_max: 240 },
+        eta: 0.5,
+      },
+      ports: [
+        { id: "in", role: "power_in", direction: "in" },
+        { id: "out", role: "power_out", direction: "out" },
+      ],
+    };
+    const { issues } = validateNet([typeA, converter], net);
+    expect(issues.some((i) => i.level === "error" && i.message.includes("I_max exceeded"))).toBe(
+      true,
+    );
   });
 });
