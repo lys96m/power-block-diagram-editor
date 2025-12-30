@@ -30,6 +30,10 @@ type DiagramState = {
   updateNetLabel: (netId: string, label: string) => void;
   updateNetAttributes: (netId: string, updates: Partial<Net>) => void;
   removeNet: (netId: string) => boolean;
+  undoNetAction: () => boolean;
+  redoNetAction: () => boolean;
+  canUndoNet: boolean;
+  canRedoNet: boolean;
 };
 
 const DiagramStateContext = createContext<DiagramState | null>(null);
@@ -79,6 +83,14 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const nodeCounter = useRef(3);
   const [nets, setNets] = useState<Net[]>([defaultNet]);
+  const historyRef = useRef<{
+    past: { nets: Net[]; edges: Edge[] }[];
+    future: { nets: Net[]; edges: Edge[] }[];
+  }>({
+    past: [],
+    future: [],
+  });
+  const [historyState, setHistoryState] = useState({ canUndo: false, canRedo: false });
 
   const onConnect: OnConnect = (connection) =>
     setEdges((eds) => addEdge({ ...connection, type: "smooth" }, eds));
@@ -135,6 +147,16 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   const addNet = () => {
+    const snapshot = {
+      nets: nets.map((n) => ({ ...n })),
+      edges: edges.map((e) => ({
+        ...e,
+        data: e.data ? { ...(e.data as Record<string, unknown>) } : undefined,
+      })),
+    };
+    historyRef.current.past.push(snapshot);
+    historyRef.current.future = [];
+    setHistoryState({ canUndo: historyRef.current.past.length > 0, canRedo: false });
     let newId = "";
     setNets((prev) => {
       const index = prev.length + 1;
@@ -147,19 +169,49 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   const updateEdgeNet = (edgeId: string, netId: string | null) => {
+    const snapshot = {
+      nets: nets.map((n) => ({ ...n })),
+      edges: edges.map((e) => ({
+        ...e,
+        data: e.data ? { ...(e.data as Record<string, unknown>) } : undefined,
+      })),
+    };
+    historyRef.current.past.push(snapshot);
+    historyRef.current.future = [];
     setEdges((prev) =>
       prev.map((e) =>
         e.id === edgeId ? { ...e, data: { ...(e.data ?? {}), netId: netId ?? null } } : e,
       ),
     );
+    setHistoryState({ canUndo: historyRef.current.past.length > 0, canRedo: false });
   };
 
   const updateNetLabel = (netId: string, label: string) => {
+    const snapshot = {
+      nets: nets.map((n) => ({ ...n })),
+      edges: edges.map((e) => ({
+        ...e,
+        data: e.data ? { ...(e.data as Record<string, unknown>) } : undefined,
+      })),
+    };
+    historyRef.current.past.push(snapshot);
+    historyRef.current.future = [];
     setNets((prev) => prev.map((net) => (net.id === netId ? { ...net, label } : net)));
+    setHistoryState({ canUndo: historyRef.current.past.length > 0, canRedo: false });
   };
 
   const updateNetAttributes = (netId: string, updates: Partial<Net>) => {
+    const snapshot = {
+      nets: nets.map((n) => ({ ...n })),
+      edges: edges.map((e) => ({
+        ...e,
+        data: e.data ? { ...(e.data as Record<string, unknown>) } : undefined,
+      })),
+    };
+    historyRef.current.past.push(snapshot);
+    historyRef.current.future = [];
     setNets((prev) => prev.map((net) => (net.id === netId ? { ...net, ...updates } : net)));
+    setHistoryState({ canUndo: historyRef.current.past.length > 0, canRedo: false });
   };
 
   const removeNet = (netId: string) => {
@@ -167,7 +219,57 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
       (e) => (e.data as { netId?: string | null } | undefined)?.netId === netId,
     );
     if (inUse) return false;
+    const snapshot = {
+      nets: nets.map((n) => ({ ...n })),
+      edges: edges.map((e) => ({
+        ...e,
+        data: e.data ? { ...(e.data as Record<string, unknown>) } : undefined,
+      })),
+    };
+    historyRef.current.past.push(snapshot);
+    historyRef.current.future = [];
     setNets((prev) => prev.filter((net) => net.id !== netId));
+    setHistoryState({ canUndo: historyRef.current.past.length > 0, canRedo: false });
+    return true;
+  };
+
+  const undoNetAction = () => {
+    const last = historyRef.current.past.pop();
+    if (!last) return false;
+    const currentSnapshot = {
+      nets: nets.map((n) => ({ ...n })),
+      edges: edges.map((e) => ({
+        ...e,
+        data: e.data ? { ...(e.data as Record<string, unknown>) } : undefined,
+      })),
+    };
+    historyRef.current.future.push(currentSnapshot);
+    setNets(last.nets);
+    setEdges(last.edges);
+    setHistoryState({
+      canUndo: historyRef.current.past.length > 0,
+      canRedo: historyRef.current.future.length > 0,
+    });
+    return true;
+  };
+
+  const redoNetAction = () => {
+    const next = historyRef.current.future.pop();
+    if (!next) return false;
+    const currentSnapshot = {
+      nets: nets.map((n) => ({ ...n })),
+      edges: edges.map((e) => ({
+        ...e,
+        data: e.data ? { ...(e.data as Record<string, unknown>) } : undefined,
+      })),
+    };
+    historyRef.current.past.push(currentSnapshot);
+    setNets(next.nets);
+    setEdges(next.edges);
+    setHistoryState({
+      canUndo: historyRef.current.past.length > 0,
+      canRedo: historyRef.current.future.length > 0,
+    });
     return true;
   };
 
@@ -191,6 +293,10 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
         updateNetLabel,
         updateNetAttributes,
         removeNet,
+        undoNetAction,
+        redoNetAction,
+        canUndoNet: historyState.canUndo,
+        canRedoNet: historyState.canRedo,
       }}
     >
       {children}
