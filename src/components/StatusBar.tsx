@@ -13,7 +13,7 @@ export const StatusBar = ({ errors, warnings, nets, unassignedNets, uncertainLoa
   <Box className="status-bar">
     <Typography variant="body2">Status: Ready</Typography>
     <Typography variant="body2" color="text.secondary">
-      Nets: {nets} | Errors: {errors} | Warnings: {warnings} | Unassigned nets: {unassignedNets} |
+      Nets: {nets} | Errors: {errors} | Warnings: {warnings} | Unassigned edges: {unassignedNets} |
       Uncertain loads: {uncertainLoads}
     </Typography>
   </Box>

@@ -1,13 +1,13 @@
 import { useState } from "react";
 import type { Edge, Node } from "reactflow";
 import { createEmptyProject, parseProject, serializeProject } from "../services/projectIO";
-import type { Block, BlockType, Project, RatingA, RatingB, RatingC } from "../types/diagram";
+import type { Block, BlockType, Net, Project, RatingA, RatingB, RatingC } from "../types/diagram";
 import { defaultRatings, ensureTypeCRating } from "../lib/ratingHelpers";
 import type { ProjectDialogMode } from "../components/ProjectDialog";
 
 type NodeData = { type?: BlockType; label?: string; rating?: Block["rating"] };
 
-const diagramToProject = (nodes: Node[], edges: Edge[]): Project => {
+const diagramToProject = (nodes: Node[], edges: Edge[], nets: Net[]): Project => {
   const now = new Date().toISOString();
   const toBlock = (n: Node): Block => {
     const data = (n.data ?? {}) as NodeData;
@@ -51,12 +51,12 @@ const diagramToProject = (nodes: Node[], edges: Edge[]): Project => {
   return {
     schema_version: "1.0.0",
     meta: { title: "Untitled", created_at: now, updated_at: now, author: "unknown" },
-    nets: [],
+    nets,
     blocks: nodes.map((n) => toBlock(n)),
     connections: edges.map((e, idx) => ({
       from: `${e.source}:out`,
       to: `${e.target}:in`,
-      net: null,
+      net: (e.data as { netId?: string | null } | undefined)?.netId ?? null,
       label: typeof e.label === "string" ? e.label : `conn-${idx + 1}`,
     })),
     layout: {
@@ -77,7 +77,7 @@ const diagramToProject = (nodes: Node[], edges: Edge[]): Project => {
   };
 };
 
-const projectToDiagram = (project: Project): { nodes: Node[]; edges: Edge[] } => {
+const projectToDiagram = (project: Project): { nodes: Node[]; edges: Edge[]; nets: Net[] } => {
   const layoutBlocks = project.layout?.blocks ?? {};
   const nodesFromProject: Node[] = project.blocks.map((b, idx) => {
     const layout = layoutBlocks[b.id];
@@ -91,22 +91,30 @@ const projectToDiagram = (project: Project): { nodes: Node[]; edges: Edge[] } =>
   const edgesFromProject: Edge[] = project.connections.map((c, idx) => {
     const source = c.from.split(":")[0];
     const target = c.to.split(":")[0];
-    return { id: c.label ?? `edge-${idx + 1}`, source, target, type: "smooth" };
+    return {
+      id: c.label ?? `edge-${idx + 1}`,
+      source,
+      target,
+      type: "smooth",
+      data: { netId: c.net },
+    };
   });
 
-  return { nodes: nodesFromProject, edges: edgesFromProject };
+  return { nodes: nodesFromProject, edges: edgesFromProject, nets: project.nets ?? [] };
 };
 
 type UseProjectIOArgs = {
   nodes: Node[];
   edges: Edge[];
-  replaceDiagram: (nodes: Node[], edges: Edge[]) => void;
+  nets: Net[];
+  replaceDiagram: (nodes: Node[], edges: Edge[], nets: Net[]) => void;
   resetSelection: () => void;
 };
 
 export const useProjectIO = ({
   nodes,
   edges,
+  nets,
   replaceDiagram,
   resetSelection,
 }: UseProjectIOArgs) => {
@@ -120,8 +128,8 @@ export const useProjectIO = ({
 
   const openNewProject = () => {
     const emptyProject = createEmptyProject();
-    const { nodes: nextNodes, edges: nextEdges } = projectToDiagram(emptyProject);
-    replaceDiagram(nextNodes, nextEdges);
+    const { nodes: nextNodes, edges: nextEdges, nets: nextNets } = projectToDiagram(emptyProject);
+    replaceDiagram(nextNodes, nextEdges, nextNets);
     resetSelection();
     closeDialog();
   };
@@ -129,15 +137,15 @@ export const useProjectIO = ({
   const openDialog = () => setDialogState({ mode: "open", text: "", error: undefined });
 
   const openSaveOrExport = (mode: Exclude<ProjectDialogMode, "open" | null>) => {
-    const json = serializeProject(diagramToProject(nodes, edges));
+    const json = serializeProject(diagramToProject(nodes, edges, nets));
     setDialogState({ mode, text: json, error: undefined });
   };
 
   const applyOpenProject = () => {
     try {
       const project = parseProject(dialogState.text);
-      const { nodes: nextNodes, edges: nextEdges } = projectToDiagram(project);
-      replaceDiagram(nextNodes, nextEdges);
+      const { nodes: nextNodes, edges: nextEdges, nets: nextNets } = projectToDiagram(project);
+      replaceDiagram(nextNodes, nextEdges, nextNets);
       resetSelection();
       closeDialog();
     } catch (err) {

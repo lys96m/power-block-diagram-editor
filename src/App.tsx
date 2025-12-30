@@ -47,6 +47,9 @@ function App() {
     addNode,
     deleteItems,
     replaceDiagram,
+    nets,
+    addNet,
+    updateEdgeNet,
   } = useDiagramState();
   const {
     selectedNode,
@@ -69,7 +72,7 @@ function App() {
     openSaveOrExport,
     applyOpenProject,
     copyDialogText,
-  } = useProjectIO({ nodes, edges, replaceDiagram, resetSelection });
+  } = useProjectIO({ nodes, edges, nets, replaceDiagram, resetSelection });
 
   const edgeTypes = { smooth: SmoothEdge };
 
@@ -78,6 +81,9 @@ function App() {
     const blocks: Block[] = [];
     const labelLookup: Record<string, string> = {};
     const connectedNodeIds = new Set<string>();
+    const unassignedEdges = edges.filter(
+      (e) => !(e.data as { netId?: string } | undefined)?.netId,
+    ).length;
 
     edges.forEach((edge) => {
       connectedNodeIds.add(edge.source);
@@ -110,11 +116,11 @@ function App() {
       } as Block);
     });
 
-    const { issues: netIssues, uncertainLoads } = validateNet(blocks, defaultNet);
+    const primaryNet = nets[0] ?? defaultNet;
+    const { issues: netIssues, uncertainLoads } = validateNet(blocks, primaryNet);
     const allIssues = [...issues, ...netIssues];
     const errors = allIssues.filter((r) => r.level === "error").length;
     const warnings = allIssues.filter((r) => r.level === "warn").length;
-    const unassignedNets = nodes.filter((node) => !connectedNodeIds.has(node.id)).length;
 
     return {
       issues: allIssues,
@@ -123,11 +129,11 @@ function App() {
         errors,
         warnings,
         uncertainLoads,
-        nets: 1,
-        unassignedNets,
+        nets: nets.length || 1,
+        unassignedNets: unassignedEdges,
       },
     };
-  }, [nodes, edges]);
+  }, [nodes, edges, nets]);
 
   const { issues: validationResults, stats: validationStats, labelLookup } = validationSummary;
 
@@ -181,11 +187,17 @@ function App() {
             selectedNode={selectedNode}
             selectedEdge={selectedEdge}
             typeLabels={typeLabels}
+            nets={nets}
             onLabelChange={handleNodeLabelChange}
             onTypeChange={handleNodeTypeChange}
             onTypeAChange={handleTypeARatingChange}
             onTypeBChange={handleTypeBRatingChange}
             onTypeCChange={handleTypeCRatingChange}
+            onEdgeNetChange={(edgeId, netId) => updateEdgeNet(edgeId, netId)}
+            onCreateNet={(edgeId) => {
+              const netId = addNet();
+              updateEdgeNet(edgeId, netId);
+            }}
             onDeleteSelected={handleDeleteSelected}
           />
 
