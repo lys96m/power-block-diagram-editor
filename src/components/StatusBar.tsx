@@ -5,16 +5,24 @@ type Props = {
   errors: number;
   warnings: number;
   nets: number;
-  unassignedNets: number;
+  unassignedEdges: number;
   uncertainLoads: number;
+  orphanNets: number;
 };
 
-export const StatusBar = ({ errors, warnings, nets, unassignedNets, uncertainLoads }: Props) => (
+export const StatusBar = ({
+  errors,
+  warnings,
+  nets,
+  unassignedEdges,
+  uncertainLoads,
+  orphanNets,
+}: Props) => (
   <Box className="status-bar">
     <Typography variant="body2">Status: Ready</Typography>
     <Typography variant="body2" color="text.secondary">
-      Nets: {nets} | Errors: {errors} | Warnings: {warnings} | Unassigned edges: {unassignedNets} |
-      Uncertain loads: {uncertainLoads}
+      Nets: {nets} | Errors: {errors} | Warnings: {warnings} | Unassigned edges: {unassignedEdges} |
+      Orphan nets: {orphanNets} | Uncertain loads: {uncertainLoads}
     </Typography>
   </Box>
 );

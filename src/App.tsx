@@ -101,6 +101,7 @@ function App() {
     const nodeNets = new Map<string, Set<string>>();
     const netBlocks = new Map<string, Block[]>();
     const invalidNetRefs: string[] = [];
+    const referencedNets = new Set<string>();
 
     edges.forEach((edge) => {
       const netId = (edge.data as { netId?: string } | undefined)?.netId;
@@ -110,6 +111,7 @@ function App() {
         if (!nodeNets.has(edge.target)) nodeNets.set(edge.target, new Set());
         nodeNets.get(edge.source)?.add(netId);
         nodeNets.get(edge.target)?.add(netId);
+        referencedNets.add(netId);
       }
     });
 
@@ -171,6 +173,7 @@ function App() {
 
     const errors = issues.filter((r) => r.level === "error").length;
     const warnings = issues.filter((r) => r.level === "warn").length;
+    const orphanNets = nets.filter((net) => !referencedNets.has(net.id)).length;
 
     return {
       issues,
@@ -180,7 +183,8 @@ function App() {
         warnings,
         uncertainLoads: totalUncertain,
         nets: nets.length || 1,
-        unassignedNets: unassignedEdges,
+        unassignedEdges,
+        orphanNets,
       },
     };
   }, [nodes, edges, nets]);
@@ -265,6 +269,11 @@ function App() {
             <Typography variant="body2">
               Uncertain loads: {validationStats.uncertainLoads}
             </Typography>
+            <Typography variant="body2">Nets: {validationStats.nets}</Typography>
+            <Typography variant="body2">
+              Unassigned edges: {validationStats.unassignedEdges}
+            </Typography>
+            <Typography variant="body2">Orphan nets: {validationStats.orphanNets}</Typography>
           </Stack>
 
           <Box mt={1}>
@@ -311,7 +320,8 @@ function App() {
         errors={validationStats.errors}
         warnings={validationStats.warnings}
         nets={validationStats.nets}
-        unassignedNets={validationStats.unassignedNets}
+        unassignedEdges={validationStats.unassignedEdges}
+        orphanNets={validationStats.orphanNets}
         uncertainLoads={validationStats.uncertainLoads}
       />
 
