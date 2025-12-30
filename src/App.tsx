@@ -51,6 +51,8 @@ function App() {
     addNet,
     updateEdgeNet,
     updateNetLabel,
+    updateNetAttributes,
+    removeNet,
   } = useDiagramState();
   const {
     selectedNode,
