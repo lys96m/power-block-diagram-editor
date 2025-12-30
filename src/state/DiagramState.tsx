@@ -27,6 +27,7 @@ type DiagramState = {
   nets: Net[];
   addNet: () => string;
   updateEdgeNet: (edgeId: string, netId: string | null) => void;
+  updateNetLabel: (netId: string, label: string) => void;
 };
 
 const DiagramStateContext = createContext<DiagramState | null>(null);
@@ -151,6 +152,10 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
     );
   };
 
+  const updateNetLabel = (netId: string, label: string) => {
+    setNets((prev) => prev.map((net) => (net.id === netId ? { ...net, label } : net)));
+  };
+
   return (
     <DiagramStateContext.Provider
       value={{
@@ -168,6 +173,7 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
         nets,
         addNet,
         updateEdgeNet,
+        updateNetLabel,
       }}
     >
       {children}

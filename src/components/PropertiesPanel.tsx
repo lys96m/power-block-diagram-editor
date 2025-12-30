@@ -25,6 +25,7 @@ type Props = {
   ) => void;
   onEdgeNetChange: (edgeId: string, netId: string | null) => void;
   onCreateNet: (edgeId: string) => void;
+  onRenameNet: (netId: string, label: string) => void;
   onDeleteSelected: () => void;
 };
 
@@ -40,6 +41,7 @@ export const PropertiesPanel = ({
   onTypeCChange,
   onEdgeNetChange,
   onCreateNet,
+  onRenameNet,
   onDeleteSelected,
 }: Props) => (
   <Stack spacing={1} mt={2}>
@@ -280,6 +282,24 @@ export const PropertiesPanel = ({
             </MenuItem>
           ))}
         </TextField>
+        {((selectedEdge.data as { netId?: string | null } | undefined)?.netId ?? "") !== "" && (
+          <TextField
+            size="small"
+            label="Net Name"
+            value={
+              nets.find(
+                (net) =>
+                  net.id === (selectedEdge.data as { netId?: string | null } | undefined)?.netId,
+              )?.label ?? ""
+            }
+            onChange={(e) =>
+              onRenameNet(
+                (selectedEdge.data as { netId?: string | null } | undefined)?.netId ?? "",
+                e.target.value,
+              )
+            }
+          />
+        )}
         <Button
           variant="outlined"
           size="small"

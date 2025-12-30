@@ -50,6 +50,7 @@ function App() {
     nets,
     addNet,
     updateEdgeNet,
+    updateNetLabel,
   } = useDiagramState();
   const {
     selectedNode,
@@ -198,6 +199,7 @@ function App() {
               const netId = addNet();
               updateEdgeNet(edgeId, netId);
             }}
+            onRenameNet={updateNetLabel}
             onDeleteSelected={handleDeleteSelected}
           />
 
