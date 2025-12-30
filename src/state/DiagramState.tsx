@@ -11,6 +11,8 @@ import type {
 } from "reactflow";
 import type { Net } from "../types/diagram";
 import { defaultNet } from "../lib/constants";
+import { initialNodes, initialEdges, nextCounterFromNodes } from "./initialDiagram";
+import { createHistory, record, undo, redo, historyState as calcHistoryState } from "./netHistory";
 
 type DiagramState = {
   nodes: Node[];
@@ -38,58 +40,12 @@ type DiagramState = {
 
 const DiagramStateContext = createContext<DiagramState | null>(null);
 
-const initialNodes: Node[] = [
-  {
-    id: "source",
-    position: { x: 150, y: 120 },
-    data: {
-      label: "Power Source (Type C)",
-      type: "C",
-      rating: {
-        in: { V_in: 200, phase_in: 1 },
-        out: { V_out: 24, phase_out: 0 },
-      },
-    },
-  },
-  {
-    id: "breaker",
-    position: { x: 450, y: 120 },
-    data: { label: "Breaker (Type A)", type: "A", rating: { V_max: 250, I_max: 20, phase: 1 } },
-  },
-  {
-    id: "load",
-    position: { x: 750, y: 120 },
-    data: { label: "Load (Type B)", type: "B", rating: { V_in: 200, phase: 1, I_in: 5 } },
-  },
-];
-
-const initialEdges: Edge[] = [
-  { id: "e1-2", source: "source", target: "breaker", type: "smooth" },
-  { id: "e2-3", source: "breaker", target: "load", type: "smooth" },
-];
-
-const nextCounterFromNodes = (nodes: Node[]): number => {
-  const maxNumericId = nodes.reduce<number>((max, node) => {
-    const match = node.id.match(/(\d+)$/);
-    const num = match ? Number(match[1]) : Number.NaN;
-    if (!Number.isNaN(num) && num > max) return num;
-    return max;
-  }, 0);
-  return Math.max(maxNumericId, nodes.length);
-};
-
 export const DiagramProvider = ({ children }: { children: React.ReactNode }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const nodeCounter = useRef(3);
+  const nodeCounter = useRef(nextCounterFromNodes(initialNodes));
   const [nets, setNets] = useState<Net[]>([defaultNet]);
-  const historyRef = useRef<{
-    past: { nets: Net[]; edges: Edge[] }[];
-    future: { nets: Net[]; edges: Edge[] }[];
-  }>({
-    past: [],
-    future: [],
-  });
+  const historyRef = useRef(createHistory());
   const [historyState, setHistoryState] = useState({ canUndo: false, canRedo: false });
 
   const onConnect: OnConnect = (connection) =>
@@ -147,16 +103,8 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   const addNet = () => {
-    const snapshot = {
-      nets: nets.map((n) => ({ ...n })),
-      edges: edges.map((e) => ({
-        ...e,
-        data: e.data ? { ...(e.data as Record<string, unknown>) } : undefined,
-      })),
-    };
-    historyRef.current.past.push(snapshot);
-    historyRef.current.future = [];
-    setHistoryState({ canUndo: historyRef.current.past.length > 0, canRedo: false });
+    record(historyRef.current, nets, edges);
+    setHistoryState(calcHistoryState(historyRef.current));
     let newId = "";
     setNets((prev) => {
       const index = prev.length + 1;
@@ -169,49 +117,25 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   const updateEdgeNet = (edgeId: string, netId: string | null) => {
-    const snapshot = {
-      nets: nets.map((n) => ({ ...n })),
-      edges: edges.map((e) => ({
-        ...e,
-        data: e.data ? { ...(e.data as Record<string, unknown>) } : undefined,
-      })),
-    };
-    historyRef.current.past.push(snapshot);
-    historyRef.current.future = [];
+    record(historyRef.current, nets, edges);
     setEdges((prev) =>
       prev.map((e) =>
         e.id === edgeId ? { ...e, data: { ...(e.data ?? {}), netId: netId ?? null } } : e,
       ),
     );
-    setHistoryState({ canUndo: historyRef.current.past.length > 0, canRedo: false });
+    setHistoryState(calcHistoryState(historyRef.current));
   };
 
   const updateNetLabel = (netId: string, label: string) => {
-    const snapshot = {
-      nets: nets.map((n) => ({ ...n })),
-      edges: edges.map((e) => ({
-        ...e,
-        data: e.data ? { ...(e.data as Record<string, unknown>) } : undefined,
-      })),
-    };
-    historyRef.current.past.push(snapshot);
-    historyRef.current.future = [];
+    record(historyRef.current, nets, edges);
     setNets((prev) => prev.map((net) => (net.id === netId ? { ...net, label } : net)));
-    setHistoryState({ canUndo: historyRef.current.past.length > 0, canRedo: false });
+    setHistoryState(calcHistoryState(historyRef.current));
   };
 
   const updateNetAttributes = (netId: string, updates: Partial<Net>) => {
-    const snapshot = {
-      nets: nets.map((n) => ({ ...n })),
-      edges: edges.map((e) => ({
-        ...e,
-        data: e.data ? { ...(e.data as Record<string, unknown>) } : undefined,
-      })),
-    };
-    historyRef.current.past.push(snapshot);
-    historyRef.current.future = [];
+    record(historyRef.current, nets, edges);
     setNets((prev) => prev.map((net) => (net.id === netId ? { ...net, ...updates } : net)));
-    setHistoryState({ canUndo: historyRef.current.past.length > 0, canRedo: false });
+    setHistoryState(calcHistoryState(historyRef.current));
   };
 
   const removeNet = (netId: string) => {
@@ -219,57 +143,27 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
       (e) => (e.data as { netId?: string | null } | undefined)?.netId === netId,
     );
     if (inUse) return false;
-    const snapshot = {
-      nets: nets.map((n) => ({ ...n })),
-      edges: edges.map((e) => ({
-        ...e,
-        data: e.data ? { ...(e.data as Record<string, unknown>) } : undefined,
-      })),
-    };
-    historyRef.current.past.push(snapshot);
-    historyRef.current.future = [];
+    record(historyRef.current, nets, edges);
     setNets((prev) => prev.filter((net) => net.id !== netId));
-    setHistoryState({ canUndo: historyRef.current.past.length > 0, canRedo: false });
+    setHistoryState(calcHistoryState(historyRef.current));
     return true;
   };
 
   const undoNetAction = () => {
-    const last = historyRef.current.past.pop();
+    const last = undo(historyRef.current, nets, edges);
     if (!last) return false;
-    const currentSnapshot = {
-      nets: nets.map((n) => ({ ...n })),
-      edges: edges.map((e) => ({
-        ...e,
-        data: e.data ? { ...(e.data as Record<string, unknown>) } : undefined,
-      })),
-    };
-    historyRef.current.future.push(currentSnapshot);
     setNets(last.nets);
     setEdges(last.edges);
-    setHistoryState({
-      canUndo: historyRef.current.past.length > 0,
-      canRedo: historyRef.current.future.length > 0,
-    });
+    setHistoryState(calcHistoryState(historyRef.current));
     return true;
   };
 
   const redoNetAction = () => {
-    const next = historyRef.current.future.pop();
+    const next = redo(historyRef.current, nets, edges);
     if (!next) return false;
-    const currentSnapshot = {
-      nets: nets.map((n) => ({ ...n })),
-      edges: edges.map((e) => ({
-        ...e,
-        data: e.data ? { ...(e.data as Record<string, unknown>) } : undefined,
-      })),
-    };
-    historyRef.current.past.push(currentSnapshot);
     setNets(next.nets);
     setEdges(next.edges);
-    setHistoryState({
-      canUndo: historyRef.current.past.length > 0,
-      canRedo: historyRef.current.future.length > 0,
-    });
+    setHistoryState(calcHistoryState(historyRef.current));
     return true;
   };
 
