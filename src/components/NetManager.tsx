@@ -16,6 +16,10 @@ type Props = {
   updateNetLabel: (netId: string, label: string) => void;
   updateNetAttributes: (netId: string, updates: Partial<Net>) => void;
   removeNet: (netId: string) => boolean;
+  undoNetAction: () => boolean;
+  redoNetAction: () => boolean;
+  canUndoNet: boolean;
+  canRedoNet: boolean;
 };
 
 const NetManager = ({
@@ -25,6 +29,10 @@ const NetManager = ({
   updateNetLabel,
   updateNetAttributes,
   removeNet,
+  undoNetAction,
+  redoNetAction,
+  canUndoNet,
+  canRedoNet,
 }: Props) => {
   const [selectedNetId, setSelectedNetId] = useState<string | null>(nets[0]?.id ?? null);
   const effectiveNetId = useMemo(() => {
@@ -73,6 +81,12 @@ const NetManager = ({
           </TextField>
           <Button variant="contained" size="small" onClick={handleAdd}>
             Add
+          </Button>
+          <Button variant="outlined" size="small" disabled={!canUndoNet} onClick={undoNetAction}>
+            Undo
+          </Button>
+          <Button variant="outlined" size="small" disabled={!canRedoNet} onClick={redoNetAction}>
+            Redo
           </Button>
         </Stack>
 

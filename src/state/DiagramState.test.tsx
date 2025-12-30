@@ -61,4 +61,44 @@ describe("DiagramState net helpers", () => {
     expect(removed).toBe(true);
     expect(result.current.nets.find((n) => n.id === netId)).toBeUndefined();
   });
+
+  it("undoes and redoes net add", () => {
+    const { result } = renderHook(() => useDiagramState(), { wrapper });
+    const initialCount = result.current.nets.length;
+    let newNetId = "";
+    act(() => {
+      newNetId = result.current.addNet();
+    });
+    expect(result.current.nets.length).toBe(initialCount + 1);
+
+    let undone = false;
+    act(() => {
+      undone = result.current.undoNetAction();
+    });
+    expect(undone).toBe(true);
+    expect(result.current.nets.find((n) => n.id === newNetId)).toBeUndefined();
+
+    let redone = false;
+    act(() => {
+      redone = result.current.redoNetAction();
+    });
+    expect(redone).toBe(true);
+    expect(result.current.nets.length).toBe(initialCount + 1);
+  });
+
+  it("undoes net attribute update", () => {
+    const { result } = renderHook(() => useDiagramState(), { wrapper });
+    const netId = result.current.nets[0].id;
+    const originalVoltage = result.current.nets[0].voltage;
+
+    act(() => {
+      result.current.updateNetAttributes(netId, { voltage: originalVoltage + 50 });
+    });
+    expect(result.current.nets.find((n) => n.id === netId)?.voltage).toBe(originalVoltage + 50);
+
+    act(() => {
+      result.current.undoNetAction();
+    });
+    expect(result.current.nets.find((n) => n.id === netId)?.voltage).toBe(originalVoltage);
+  });
 });

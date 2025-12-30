@@ -54,6 +54,10 @@ function App() {
     updateNetLabel,
     updateNetAttributes,
     removeNet,
+    undoNetAction,
+    redoNetAction,
+    canUndoNet,
+    canRedoNet,
   } = useDiagramState();
   const {
     selectedNode,
@@ -268,6 +272,10 @@ function App() {
             updateNetLabel={updateNetLabel}
             updateNetAttributes={updateNetAttributes}
             removeNet={removeNet}
+            undoNetAction={undoNetAction}
+            redoNetAction={redoNetAction}
+            canUndoNet={canUndoNet}
+            canRedoNet={canRedoNet}
           />
 
           <Divider sx={{ my: 2 }} />
