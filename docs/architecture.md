@@ -16,6 +16,10 @@
 - 永続化: `project.json` v1.0.0 を基本フォーマットとし、Storage 層（ローカル保存/読み込み・エクスポート）を分離。
 - 検証: `src/services/validation.ts` などに集約し、電圧/相整合・電流計算・未割当 net・未確定負荷（I/P 未入力）・参照整合チェックを実装。
 - レイアウト: React Flow のノード/エッジ変化を `onNodesChange`/`onEdgesChange` で反映。直交配線・ポイント列を `layout.edges` に保存。
+- 状態の責務分離:
+  - 初期ノード/エッジ定義は `state/initialDiagram.ts` に置き、UI ロジックから分離する。
+  - Net の履歴管理は `state/netHistory.ts` に置き、DiagramState では API 呼び出しに専念する。
+  - 新しい状態スライスや履歴を追加する場合も、同様に専用モジュールへ切り出す。
 
 ## 依存の使い方メモ
 
