@@ -7,7 +7,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type { Net } from "../types/diagram";
-import { toNumberOrUndefined } from "../lib/ratingHelpers";
+import NetDetailsForm from "./NetDetailsForm";
 
 type Props = {
   nets: Net[];
@@ -91,77 +91,13 @@ const NetManager = ({
         </Stack>
 
         {selectedNet ? (
-          <Stack spacing={1}>
-            <TextField
-              size="small"
-              label="Name"
-              value={selectedNet.label}
-              onChange={(e) => updateNetLabel(selectedNet.id, e.target.value)}
-            />
-            <TextField
-              size="small"
-              label="Kind"
-              select
-              value={selectedNet.kind}
-              onChange={(e) =>
-                updateNetAttributes(selectedNet.id, { kind: e.target.value as Net["kind"] })
-              }
-            >
-              <MenuItem value="AC">AC</MenuItem>
-              <MenuItem value="DC">DC</MenuItem>
-              <MenuItem value="SIGNAL">SIGNAL</MenuItem>
-            </TextField>
-            <TextField
-              size="small"
-              label="Voltage (V)"
-              type="number"
-              inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
-              value={selectedNet.voltage}
-              onChange={(e) =>
-                updateNetAttributes(selectedNet.id, {
-                  voltage: toNumberOrUndefined(e.target.value),
-                })
-              }
-            />
-            <TextField
-              size="small"
-              label="Tolerance (%)"
-              type="number"
-              inputProps={{ step: 0.1, min: 0, max: 100, inputMode: "decimal" }}
-              value={selectedNet.tolerance ?? ""}
-              onChange={(e) =>
-                updateNetAttributes(selectedNet.id, {
-                  tolerance: toNumberOrUndefined(e.target.value),
-                })
-              }
-            />
-            <TextField
-              size="small"
-              label="Phase"
-              select
-              value={selectedNet.phase}
-              onChange={(e) =>
-                updateNetAttributes(selectedNet.id, {
-                  phase: Number(e.target.value) as 0 | 1 | 3,
-                })
-              }
-            >
-              {[0, 1, 3].map((phase) => (
-                <MenuItem key={phase} value={phase}>
-                  {phase}
-                </MenuItem>
-              ))}
-            </TextField>
-            <Button
-              variant="outlined"
-              size="small"
-              color="warning"
-              disabled={edgeCount > 0}
-              onClick={handleDelete}
-            >
-              Delete Net {edgeCount > 0 ? `(in use: ${edgeCount})` : ""}
-            </Button>
-          </Stack>
+          <NetDetailsForm
+            net={selectedNet}
+            edgeCount={edgeCount}
+            onRename={updateNetLabel}
+            onUpdateAttributes={updateNetAttributes}
+            onDelete={handleDelete}
+          />
         ) : (
           <Typography variant="body2" color="text.secondary">
             No net selected.
