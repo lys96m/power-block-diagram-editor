@@ -20,6 +20,7 @@
   - 初期ノード/エッジ定義は `state/initialDiagram.ts` に置き、UI ロジックから分離する。
   - Net の履歴管理は `state/netHistory.ts` に置き、DiagramState では API 呼び出しに専念する。
   - 新しい状態スライスや履歴を追加する場合も、同様に専用モジュールへ切り出す。
+- ビルド: Vite で chunk size 警告が出る場合は manualChunks や dynamic import を検討し、`vite.config.ts` に設定を置く。対策方針を ADR か docs に記録する。
 
 ## 依存の使い方メモ
 
