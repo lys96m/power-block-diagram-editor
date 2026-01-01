@@ -48,10 +48,15 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
   const historyRef = useRef(createHistory());
   const [historyState, setHistoryState] = useState({ canUndo: false, canRedo: false });
 
-  const onConnect: OnConnect = (connection) =>
+  const onConnect: OnConnect = (connection) => {
+    record(historyRef.current, nodes, edges, nets, nodeCounter.current);
+    setHistoryState(calcHistoryState(historyRef.current));
     setEdges((eds) => addEdge({ ...connection, type: "smooth" }, eds));
+  };
 
   const addNode = (kind: "A" | "B" | "C") => {
+    record(historyRef.current, nodes, edges, nets, nodeCounter.current);
+    setHistoryState(calcHistoryState(historyRef.current));
     const id = `${kind}${nodeCounter.current + 1}`;
     nodeCounter.current += 1;
     const offset = nodeCounter.current * 30;
@@ -78,6 +83,8 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   const deleteItems = (nodeIds: string[], edgeIds: string[]) => {
+    record(historyRef.current, nodes, edges, nets, nodeCounter.current);
+    setHistoryState(calcHistoryState(historyRef.current));
     setEdges((prev) =>
       prev.filter(
         (e) =>
@@ -96,14 +103,16 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   const replaceDiagram = (nextNodes: Node[], nextEdges: Edge[], nextNets: Net[]) => {
+    record(historyRef.current, nodes, edges, nets, nodeCounter.current);
     setNodes(nextNodes);
     setEdges(nextEdges);
     setNets(nextNets.length > 0 ? nextNets : [defaultNet]);
     nodeCounter.current = nextCounterFromNodes(nextNodes);
+    setHistoryState(calcHistoryState(historyRef.current));
   };
 
   const addNet = () => {
-    record(historyRef.current, nets, edges);
+    record(historyRef.current, nodes, edges, nets, nodeCounter.current);
     setHistoryState(calcHistoryState(historyRef.current));
     let newId = "";
     setNets((prev) => {
@@ -117,7 +126,7 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   const updateEdgeNet = (edgeId: string, netId: string | null) => {
-    record(historyRef.current, nets, edges);
+    record(historyRef.current, nodes, edges, nets, nodeCounter.current);
     setEdges((prev) =>
       prev.map((e) =>
         e.id === edgeId ? { ...e, data: { ...(e.data ?? {}), netId: netId ?? null } } : e,
@@ -127,13 +136,13 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   const updateNetLabel = (netId: string, label: string) => {
-    record(historyRef.current, nets, edges);
+    record(historyRef.current, nodes, edges, nets, nodeCounter.current);
     setNets((prev) => prev.map((net) => (net.id === netId ? { ...net, label } : net)));
     setHistoryState(calcHistoryState(historyRef.current));
   };
 
   const updateNetAttributes = (netId: string, updates: Partial<Net>) => {
-    record(historyRef.current, nets, edges);
+    record(historyRef.current, nodes, edges, nets, nodeCounter.current);
     setNets((prev) => prev.map((net) => (net.id === netId ? { ...net, ...updates } : net)));
     setHistoryState(calcHistoryState(historyRef.current));
   };
@@ -143,26 +152,30 @@ export const DiagramProvider = ({ children }: { children: React.ReactNode }) => 
       (e) => (e.data as { netId?: string | null } | undefined)?.netId === netId,
     );
     if (inUse) return false;
-    record(historyRef.current, nets, edges);
+    record(historyRef.current, nodes, edges, nets, nodeCounter.current);
     setNets((prev) => prev.filter((net) => net.id !== netId));
     setHistoryState(calcHistoryState(historyRef.current));
     return true;
   };
 
   const undoNetAction = () => {
-    const last = undo(historyRef.current, nets, edges);
+    const last = undo(historyRef.current, nodes, edges, nets, nodeCounter.current);
     if (!last) return false;
-    setNets(last.nets);
+    setNodes(last.nodes);
     setEdges(last.edges);
+    setNets(last.nets);
+    nodeCounter.current = last.nodeCounter;
     setHistoryState(calcHistoryState(historyRef.current));
     return true;
   };
 
   const redoNetAction = () => {
-    const next = redo(historyRef.current, nets, edges);
+    const next = redo(historyRef.current, nodes, edges, nets, nodeCounter.current);
     if (!next) return false;
-    setNets(next.nets);
+    setNodes(next.nodes);
     setEdges(next.edges);
+    setNets(next.nets);
+    nodeCounter.current = next.nodeCounter;
     setHistoryState(calcHistoryState(historyRef.current));
     return true;
   };
