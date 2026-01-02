@@ -18,11 +18,13 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { useMemo, useState } from "react";
 import type { ValidationResult } from "../types/diagram";
 import type { ValidationStats } from "../hooks/useValidationSummary";
+import type { Strings } from "../i18n/strings";
 
 type Props = {
   stats: ValidationStats;
   issues: ValidationResult[];
   labelLookup: Record<string, string>;
+  labels: Strings["validation"];
 };
 
 type Level = ValidationResult["level"];
@@ -30,18 +32,17 @@ type Level = ValidationResult["level"];
 const levelMeta: Record<
   Level,
   {
-    label: string;
     color: string;
     Icon: typeof ErrorOutlineIcon;
     chipColor: "error" | "warning" | "info";
   }
 > = {
-  error: { label: "Errors", color: "error.main", Icon: ErrorOutlineIcon, chipColor: "error" },
-  warn: { label: "Warnings", color: "warning.main", Icon: WarningAmberIcon, chipColor: "warning" },
-  info: { label: "Info", color: "text.secondary", Icon: InfoOutlinedIcon, chipColor: "info" },
+  error: { color: "error.main", Icon: ErrorOutlineIcon, chipColor: "error" },
+  warn: { color: "warning.main", Icon: WarningAmberIcon, chipColor: "warning" },
+  info: { color: "text.secondary", Icon: InfoOutlinedIcon, chipColor: "info" },
 };
 
-const ValidationPanel = ({ stats, issues, labelLookup }: Props) => {
+const ValidationPanel = ({ stats, issues, labelLookup, labels }: Props) => {
   const grouped = useMemo(
     () =>
       issues.reduce<Record<Level, ValidationResult[]>>(
@@ -67,36 +68,36 @@ const ValidationPanel = ({ stats, issues, labelLookup }: Props) => {
   return (
     <Box>
       <Typography variant="subtitle1" fontWeight={600}>
-        Validation
+        {labels.heading}
       </Typography>
       <Stack direction="row" spacing={1} mt={1} flexWrap="wrap" rowGap={1}>
         <Chip
           color="error"
           size="small"
           icon={<ErrorOutlineIcon fontSize="small" />}
-          label={`Errors: ${stats.errors}`}
+          label={`${labels.errors}: ${stats.errors}`}
           variant={stats.errors ? "filled" : "outlined"}
         />
         <Chip
           color="warning"
           size="small"
           icon={<WarningAmberIcon fontSize="small" />}
-          label={`Warnings: ${stats.warnings}`}
+          label={`${labels.warnings}: ${stats.warnings}`}
           variant={stats.warnings ? "filled" : "outlined"}
         />
         <Chip
           size="small"
           icon={<InfoOutlinedIcon fontSize="small" />}
-          label={`Uncertain loads: ${stats.uncertainLoads}`}
+          label={`${labels.uncertainLoads}: ${stats.uncertainLoads}`}
           variant={stats.uncertainLoads ? "filled" : "outlined"}
         />
-        <Chip size="small" label={`Nets: ${stats.nets}`} variant="outlined" />
+        <Chip size="small" label={`${labels.nets}: ${stats.nets}`} variant="outlined" />
         <Chip
           size="small"
-          label={`Unassigned edges: ${stats.unassignedEdges}`}
+          label={`${labels.unassignedEdges}: ${stats.unassignedEdges}`}
           variant="outlined"
         />
-        <Chip size="small" label={`Orphan nets: ${stats.orphanNets}`} variant="outlined" />
+        <Chip size="small" label={`${labels.orphanNets}: ${stats.orphanNets}`} variant="outlined" />
       </Stack>
 
       <Divider sx={{ my: 1.5 }} />
@@ -105,13 +106,15 @@ const ValidationPanel = ({ stats, issues, labelLookup }: Props) => {
         <Stack direction="row" spacing={1} alignItems="center">
           <CheckCircleOutlineIcon color="success" fontSize="small" />
           <Typography variant="body2" color="success.main">
-            検証エラーはありません。
+            {labels.noIssues}
           </Typography>
         </Stack>
       ) : (
         (["error", "warn", "info"] as Level[]).map((level) => {
           const items = grouped[level];
-          const { label, color, Icon, chipColor } = levelMeta[level];
+          const { color, Icon, chipColor } = levelMeta[level];
+          const sectionLabel =
+            level === "error" ? labels.errors : level === "warn" ? labels.warnings : labels.info;
           return (
             <Box key={level} mb={1} data-testid={`validation-section-${level}`}>
               <Button
@@ -130,7 +133,7 @@ const ValidationPanel = ({ stats, issues, labelLookup }: Props) => {
                 disabled={items.length === 0}
               >
                 <Typography variant="body2" fontWeight={600}>
-                  {label} ({items.length})
+                  {sectionLabel} ({items.length})
                 </Typography>
               </Button>
               <Collapse in={open[level]} timeout="auto" unmountOnExit>
@@ -159,7 +162,7 @@ const ValidationPanel = ({ stats, issues, labelLookup }: Props) => {
                           primaryTypographyProps={{ variant: "body2" }}
                           secondaryTypographyProps={{ variant: "caption", color: "text.secondary" }}
                           primary={issue.message}
-                          secondary={targetLabel ? `対象: ${targetLabel}` : undefined}
+                          secondary={targetLabel ? `${labels.target}: ${targetLabel}` : undefined}
                         />
                       </ListItem>
                     );

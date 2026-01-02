@@ -5,8 +5,10 @@ import "@testing-library/jest-dom/vitest";
 import ValidationPanel from "./ValidationPanel";
 import type { ValidationResult } from "../types/diagram";
 import type { ValidationStats } from "../hooks/useValidationSummary";
+import { getStrings } from "../i18n/strings";
 
 describe("ValidationPanel", () => {
+  const labels = getStrings().validation;
   const stats: ValidationStats = {
     errors: 1,
     warnings: 1,
@@ -28,6 +30,7 @@ describe("ValidationPanel", () => {
         stats={stats}
         issues={issues}
         labelLookup={{ n1: "Block A", n2: "Block B" }}
+        labels={labels}
       />,
     );
 
@@ -37,11 +40,11 @@ describe("ValidationPanel", () => {
 
     expect(screen.getByText("Voltage mismatch")).toBeInTheDocument();
     expect(screen.getByText("Check rating")).toBeInTheDocument();
-    expect(screen.getByText(/対象: Block A/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`${labels.target}: Block A`))).toBeInTheDocument();
   });
 
   it("allows collapsing a level section", async () => {
-    render(<ValidationPanel stats={stats} issues={issues} labelLookup={{}} />);
+    render(<ValidationPanel stats={stats} issues={issues} labelLookup={{}} labels={labels} />);
     const warnToggle = screen.getAllByTestId("validation-toggle-warn")[0];
     const warnSection = screen.getAllByTestId("validation-section-warn")[0];
     fireEvent.click(warnToggle);

@@ -22,6 +22,7 @@ import { useProjectIO } from "./hooks/useProjectIO";
 import { useNodeEditing } from "./hooks/useNodeEditing";
 import { useValidationSummary } from "./hooks/useValidationSummary";
 import { defaultRatings } from "./lib/ratingHelpers";
+import { getStrings } from "./i18n/strings";
 import "./App.css";
 import "reactflow/dist/style.css";
 
@@ -85,6 +86,8 @@ function App() {
     toast,
     clearToast,
   } = useProjectIO({ nodes, edges, nets, replaceDiagram, resetSelection });
+
+  const strings = getStrings();
 
   const edgeTypes = { smooth: SmoothEdge };
   const netEdgeCounts = useMemo(() => {
@@ -190,6 +193,7 @@ function App() {
             stats={validationStats}
             issues={validationResults}
             labelLookup={labelLookup}
+            labels={strings.validation}
           />
         </Box>
       </Box>
@@ -201,6 +205,7 @@ function App() {
         unassignedEdges={validationStats.unassignedEdges}
         orphanNets={validationStats.orphanNets}
         uncertainLoads={validationStats.uncertainLoads}
+        labels={strings.status}
       />
 
       <ProjectDialog
