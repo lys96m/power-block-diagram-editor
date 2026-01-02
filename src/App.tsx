@@ -3,6 +3,8 @@ import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import Snackbar, { type SnackbarCloseReason } from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 import { BaseEdge, getSmoothStepPath } from "reactflow";
 import type { EdgeProps } from "reactflow";
 import { useMemo } from "react";
@@ -80,6 +82,8 @@ function App() {
     openSaveOrExport,
     applyOpenProject,
     copyDialogText,
+    toast,
+    clearToast,
   } = useProjectIO({ nodes, edges, nets, replaceDiagram, resetSelection });
 
   const edgeTypes = { smooth: SmoothEdge };
@@ -208,6 +212,25 @@ function App() {
         onLoad={applyOpenProject}
         onCopy={copyDialogText}
       />
+      <Snackbar
+        open={!!toast}
+        autoHideDuration={3500}
+        onClose={(_event, reason?: SnackbarCloseReason) => {
+          if (reason === "clickaway") return;
+          clearToast();
+        }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        {toast ? (
+          <Alert
+            onClose={() => clearToast()}
+            severity={toast.severity}
+            sx={{ width: "100%" }}
+          >
+            {toast.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </Box>
   );
 }
