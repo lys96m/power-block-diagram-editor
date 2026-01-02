@@ -15,6 +15,7 @@ import PropertiesPanel from "./components/PropertiesPanel";
 import StatusBar from "./components/StatusBar";
 import ProjectDialog from "./components/ProjectDialog";
 import NetManager from "./components/NetManager";
+import ValidationPanel from "./components/ValidationPanel";
 import { useProjectIO } from "./hooks/useProjectIO";
 import { useNodeEditing } from "./hooks/useNodeEditing";
 import { useValidationSummary } from "./hooks/useValidationSummary";
@@ -181,59 +182,11 @@ function App() {
           />
 
           <Divider sx={{ my: 2 }} />
-          <Typography variant="subtitle1" fontWeight={600}>
-            Validation
-          </Typography>
-          <Stack spacing={0.5} mt={1}>
-            <Typography variant="body2">Errors: {validationStats.errors}</Typography>
-            <Typography variant="body2">Warnings: {validationStats.warnings}</Typography>
-            <Typography variant="body2">
-              Uncertain loads: {validationStats.uncertainLoads}
-            </Typography>
-            <Typography variant="body2">Nets: {validationStats.nets}</Typography>
-            <Typography variant="body2">
-              Unassigned edges: {validationStats.unassignedEdges}
-            </Typography>
-            <Typography variant="body2">Orphan nets: {validationStats.orphanNets}</Typography>
-          </Stack>
-
-          <Box mt={1}>
-            <Typography variant="subtitle2" fontWeight={600}>
-              Details
-            </Typography>
-            <Stack spacing={0.5} mt={0.5}>
-              {validationResults.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  No validation issues.
-                </Typography>
-              ) : (
-                validationResults.map((issue) => {
-                  const targetLabel = issue.targetId
-                    ? (labelLookup[issue.targetId] ?? issue.targetId)
-                    : null;
-                  const prefix =
-                    issue.level === "error" ? "Error" : issue.level === "warn" ? "Warning" : "Info";
-                  return (
-                    <Typography
-                      key={issue.id}
-                      variant="body2"
-                      sx={{
-                        color:
-                          issue.level === "error"
-                            ? "error.main"
-                            : issue.level === "warn"
-                              ? "warning.main"
-                              : "text.secondary",
-                      }}
-                    >
-                      {prefix}: {issue.message}
-                      {targetLabel ? ` (${targetLabel})` : ""}
-                    </Typography>
-                  );
-                })
-              )}
-            </Stack>
-          </Box>
+          <ValidationPanel
+            stats={validationStats}
+            issues={validationResults}
+            labelLookup={labelLookup}
+          />
         </Box>
       </Box>
 
