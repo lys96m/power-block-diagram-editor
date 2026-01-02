@@ -222,11 +222,7 @@ function App() {
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         {toast ? (
-          <Alert
-            onClose={() => clearToast()}
-            severity={toast.severity}
-            sx={{ width: "100%" }}
-          >
+          <Alert onClose={() => clearToast()} severity={toast.severity} sx={{ width: "100%" }}>
             {toast.message}
           </Alert>
         ) : undefined}
