@@ -7,6 +7,7 @@ import type { BlockType, RatingA, RatingB, RatingC } from "../types/diagram";
 import { ensureTypeCRating, toNumberOrUndefined, toPhase } from "../lib/ratingHelpers";
 import type { NodeData } from "../hooks/useNodeEditing";
 import DebouncedTextField from "./DebouncedTextField";
+import type { Strings } from "../i18n/strings";
 
 type Props = {
   selectedNode: Node | null;
@@ -20,6 +21,7 @@ type Props = {
     field: keyof RatingC["in"] | keyof RatingC["out"] | "eta",
     value: number | undefined,
   ) => void;
+  labels: Strings["node"];
 };
 
 const NodeProperties = ({
@@ -30,6 +32,7 @@ const NodeProperties = ({
   onTypeAChange,
   onTypeBChange,
   onTypeCChange,
+  labels,
 }: Props) => {
   if (!selectedNode) return null;
 
@@ -38,17 +41,17 @@ const NodeProperties = ({
   return (
     <>
       <Typography variant="body2" fontWeight={600}>
-        Node: {selectedNode.id}
+        {labels.nodeLabelPrefix} {selectedNode.id}
       </Typography>
       <DebouncedTextField
         size="small"
-        label="Label"
+        label={labels.label}
         value={data?.label ?? ""}
         onCommit={(value) => onLabelChange(value)}
       />
       <TextField
         size="small"
-        label="Category"
+        label={labels.category}
         select
         value={data?.type ?? ""}
         onChange={(e) => onTypeChange(e.target.value as BlockType)}
@@ -64,7 +67,7 @@ const NodeProperties = ({
         <Stack spacing={1}>
           <DebouncedTextField
             size="small"
-            label="V_max (V)"
+            label={labels.fields.V_max}
             type="number"
             inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
             value={(data.rating as RatingA | undefined)?.V_max ?? ""}
@@ -72,7 +75,7 @@ const NodeProperties = ({
           />
           <DebouncedTextField
             size="small"
-            label="I_max (A)"
+            label={labels.fields.I_max}
             type="number"
             inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
             value={(data.rating as RatingA | undefined)?.I_max ?? ""}
@@ -80,7 +83,7 @@ const NodeProperties = ({
           />
           <TextField
             size="small"
-            label="Phase"
+            label={labels.fields.phase}
             select
             value={(data.rating as RatingA | undefined)?.phase ?? ""}
             onChange={(e) => onTypeAChange("phase", toPhase(Number(e.target.value)))}
@@ -98,7 +101,7 @@ const NodeProperties = ({
         <Stack spacing={1}>
           <DebouncedTextField
             size="small"
-            label="V_in (V)"
+            label={labels.fields.V_in}
             type="number"
             inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
             value={(data.rating as RatingB | undefined)?.V_in ?? ""}
@@ -106,7 +109,7 @@ const NodeProperties = ({
           />
           <DebouncedTextField
             size="small"
-            label="I_in (A)"
+            label={labels.fields.I_in}
             type="number"
             inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
             value={(data.rating as RatingB | undefined)?.I_in ?? ""}
@@ -114,7 +117,7 @@ const NodeProperties = ({
           />
           <DebouncedTextField
             size="small"
-            label="P_in (W)"
+            label={labels.fields.P_in}
             type="number"
             inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
             value={(data.rating as RatingB | undefined)?.P_in ?? ""}
@@ -122,7 +125,7 @@ const NodeProperties = ({
           />
           <TextField
             size="small"
-            label="Phase"
+            label={labels.fields.phase}
             select
             value={(data.rating as RatingB | undefined)?.phase ?? ""}
             onChange={(e) => onTypeBChange("phase", toPhase(Number(e.target.value)))}
@@ -142,11 +145,11 @@ const NodeProperties = ({
           return (
             <Stack spacing={1}>
               <Typography variant="body2" fontWeight={600}>
-                Input
+                {labels.input}
               </Typography>
               <DebouncedTextField
                 size="small"
-                label="V_in (V)"
+                label={labels.fields.V_in}
                 type="number"
                 inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
                 value={rating.in.V_in ?? ""}
@@ -154,7 +157,7 @@ const NodeProperties = ({
               />
               <DebouncedTextField
                 size="small"
-                label="I_in_max (A)"
+                label={labels.fields.I_in_max}
                 type="number"
                 inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
                 value={rating.in.I_in_max ?? ""}
@@ -162,7 +165,7 @@ const NodeProperties = ({
               />
               <DebouncedTextField
                 size="small"
-                label="P_in_max (W)"
+                label={labels.fields.P_in_max}
                 type="number"
                 inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
                 value={rating.in.P_in_max ?? ""}
@@ -170,7 +173,7 @@ const NodeProperties = ({
               />
               <TextField
                 size="small"
-                label="Phase_in"
+                label={labels.fields.phase_in}
                 select
                 value={rating.in.phase_in ?? ""}
                 onChange={(e) => onTypeCChange("in", "phase_in", toPhase(Number(e.target.value)))}
@@ -183,11 +186,11 @@ const NodeProperties = ({
               </TextField>
 
               <Typography variant="body2" fontWeight={600}>
-                Output
+                {labels.output}
               </Typography>
               <DebouncedTextField
                 size="small"
-                label="V_out (V)"
+                label={labels.fields.V_out}
                 type="number"
                 inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
                 value={rating.out.V_out ?? ""}
@@ -195,7 +198,7 @@ const NodeProperties = ({
               />
               <DebouncedTextField
                 size="small"
-                label="I_out_max (A)"
+                label={labels.fields.I_out_max}
                 type="number"
                 inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
                 value={rating.out.I_out_max ?? ""}
@@ -203,7 +206,7 @@ const NodeProperties = ({
               />
               <DebouncedTextField
                 size="small"
-                label="P_out_max (W)"
+                label={labels.fields.P_out_max}
                 type="number"
                 inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
                 value={rating.out.P_out_max ?? ""}
@@ -211,7 +214,7 @@ const NodeProperties = ({
               />
               <TextField
                 size="small"
-                label="Phase_out"
+                label={labels.fields.phase_out}
                 select
                 value={rating.out.phase_out ?? ""}
                 onChange={(e) => onTypeCChange("out", "phase_out", toPhase(Number(e.target.value)))}
@@ -224,11 +227,11 @@ const NodeProperties = ({
               </TextField>
 
               <Typography variant="body2" fontWeight={600}>
-                Efficiency
+                {labels.efficiency}
               </Typography>
               <DebouncedTextField
                 size="small"
-                label="eta (0-1)"
+                label={labels.fields.eta}
                 type="number"
                 inputProps={{ step: 0.01, min: 0, max: 1, inputMode: "decimal" }}
                 value={rating.eta ?? ""}

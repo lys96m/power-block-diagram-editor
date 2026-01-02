@@ -8,6 +8,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type { Net } from "../types/diagram";
 import NetDetailsForm from "./NetDetailsForm";
+import type { Strings } from "../i18n/strings";
 
 type Props = {
   nets: Net[];
@@ -20,6 +21,7 @@ type Props = {
   redoNetAction: () => boolean;
   canUndoNet: boolean;
   canRedoNet: boolean;
+  labels: Strings["netManager"];
 };
 
 const NetManager = ({
@@ -33,6 +35,7 @@ const NetManager = ({
   redoNetAction,
   canUndoNet,
   canRedoNet,
+  labels,
 }: Props) => {
   const [selectedNetId, setSelectedNetId] = useState<string | null>(nets[0]?.id ?? null);
   const effectiveNetId = useMemo(() => {
@@ -60,14 +63,14 @@ const NetManager = ({
   return (
     <Box>
       <Typography variant="subtitle1" fontWeight={600}>
-        Nets
+        {labels.title}
       </Typography>
       <Divider />
       <Stack spacing={1} mt={1}>
         <Stack direction="row" spacing={1}>
           <TextField
             size="small"
-            label="Select Net"
+            label={labels.selectNet}
             select
             value={effectiveNetId ?? ""}
             onChange={(e) => setSelectedNetId(e.target.value || null)}
@@ -80,13 +83,13 @@ const NetManager = ({
             ))}
           </TextField>
           <Button variant="contained" size="small" onClick={handleAdd}>
-            Add
+            {labels.add}
           </Button>
           <Button variant="outlined" size="small" disabled={!canUndoNet} onClick={undoNetAction}>
-            Undo
+            {labels.undo}
           </Button>
           <Button variant="outlined" size="small" disabled={!canRedoNet} onClick={redoNetAction}>
-            Redo
+            {labels.redo}
           </Button>
         </Stack>
 
@@ -97,10 +100,11 @@ const NetManager = ({
             onRename={updateNetLabel}
             onUpdateAttributes={updateNetAttributes}
             onDelete={handleDelete}
+            labels={labels}
           />
         ) : (
           <Typography variant="body2" color="text.secondary">
-            No net selected.
+            {labels.noNet}
           </Typography>
         )}
       </Stack>

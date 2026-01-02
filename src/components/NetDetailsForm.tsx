@@ -5,6 +5,7 @@ import TextField from "@mui/material/TextField";
 import type { Net } from "../types/diagram";
 import { toNumberOrUndefined } from "../lib/ratingHelpers";
 import DebouncedTextField from "./DebouncedTextField";
+import type { Strings } from "../i18n/strings";
 
 type Props = {
   net: Net;
@@ -12,13 +13,21 @@ type Props = {
   onRename: (netId: string, label: string) => void;
   onUpdateAttributes: (netId: string, updates: Partial<Net>) => void;
   onDelete: (netId: string) => void;
+  labels: Strings["netManager"];
 };
 
-const NetDetailsForm = ({ net, edgeCount, onRename, onUpdateAttributes, onDelete }: Props) => (
+const NetDetailsForm = ({
+  net,
+  edgeCount,
+  onRename,
+  onUpdateAttributes,
+  onDelete,
+  labels,
+}: Props) => (
   <Stack spacing={1}>
     <DebouncedTextField
       size="small"
-      label="Name"
+      label={labels.nameLabel}
       value={net.label}
       onCommit={(val) => onRename(net.id, val)}
     />

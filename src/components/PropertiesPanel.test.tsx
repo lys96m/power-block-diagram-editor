@@ -5,6 +5,7 @@ import "@testing-library/jest-dom/vitest";
 import PropertiesPanel from "./PropertiesPanel";
 import type { Edge, Node } from "reactflow";
 import type { Net } from "../types/diagram";
+import { getStrings } from "../i18n/strings";
 
 describe("PropertiesPanel", () => {
   const nets: Net[] = [{ id: "net-1", label: "N1", kind: "AC", voltage: 200, phase: 1 }];
@@ -21,6 +22,7 @@ describe("PropertiesPanel", () => {
     data: { netId: "net-1" },
   };
   const noop = () => {};
+  const strings = getStrings();
 
   it("renders node fields when node selected", () => {
     render(
@@ -41,6 +43,12 @@ describe("PropertiesPanel", () => {
         onUpdateNetAttributes={noop}
         onDeleteNet={() => true}
         onDeleteSelected={noop}
+        labels={{
+          properties: strings.properties,
+          node: strings.node,
+          edge: strings.edge,
+          netManager: strings.netManager,
+        }}
       />,
     );
 
@@ -67,6 +75,12 @@ describe("PropertiesPanel", () => {
         onUpdateNetAttributes={noop}
         onDeleteNet={() => true}
         onDeleteSelected={noop}
+        labels={{
+          properties: strings.properties,
+          node: strings.node,
+          edge: strings.edge,
+          netManager: strings.netManager,
+        }}
       />,
     );
 
