@@ -212,6 +212,7 @@ function App() {
             canUndoNet={canUndoNet}
             canRedoNet={canRedoNet}
             labels={strings.netManager}
+            edgeLabels={strings.edge}
           />
 
           <Divider sx={{ my: 2 }} />
@@ -220,6 +221,7 @@ function App() {
             issues={validationResults}
             labelLookup={labelLookup}
             labels={strings.validation}
+            counts={strings.counts}
           />
         </Box>
       </Box>
@@ -231,7 +233,8 @@ function App() {
         unassignedEdges={validationStats.unassignedEdges}
         orphanNets={validationStats.orphanNets}
         uncertainLoads={validationStats.uncertainLoads}
-        labels={strings.status}
+        readyLabel={strings.status.ready}
+        counts={strings.counts}
       />
 
       <ProjectDialog

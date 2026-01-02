@@ -22,6 +22,7 @@ type Props = {
   canUndoNet: boolean;
   canRedoNet: boolean;
   labels: Strings["netManager"];
+  edgeLabels: Strings["edge"];
 };
 
 const NetManager = ({
@@ -36,6 +37,7 @@ const NetManager = ({
   canUndoNet,
   canRedoNet,
   labels,
+  edgeLabels,
 }: Props) => {
   const [selectedNetId, setSelectedNetId] = useState<string | null>(nets[0]?.id ?? null);
   const effectiveNetId = useMemo(() => {
@@ -100,7 +102,7 @@ const NetManager = ({
             onRename={updateNetLabel}
             onUpdateAttributes={updateNetAttributes}
             onDelete={handleDelete}
-            labels={labels}
+            labels={edgeLabels}
           />
         ) : (
           <Typography variant="body2" color="text.secondary">

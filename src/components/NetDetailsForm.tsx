@@ -13,7 +13,7 @@ type Props = {
   onRename: (netId: string, label: string) => void;
   onUpdateAttributes: (netId: string, updates: Partial<Net>) => void;
   onDelete: (netId: string) => void;
-  labels: Strings["netManager"];
+  labels: Strings["edge"];
 };
 
 const NetDetailsForm = ({
@@ -27,13 +27,13 @@ const NetDetailsForm = ({
   <Stack spacing={1}>
     <DebouncedTextField
       size="small"
-      label={labels.nameLabel}
+      label={labels.netName}
       value={net.label}
       onCommit={(val) => onRename(net.id, val)}
     />
     <TextField
       size="small"
-      label="Kind"
+      label={labels.kind}
       select
       value={net.kind}
       onChange={(e) => onUpdateAttributes(net.id, { kind: e.target.value as Net["kind"] })}
@@ -44,7 +44,7 @@ const NetDetailsForm = ({
     </TextField>
     <DebouncedTextField
       size="small"
-      label="Voltage (V)"
+      label={labels.voltage}
       type="number"
       inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
       value={net.voltage}
@@ -52,7 +52,7 @@ const NetDetailsForm = ({
     />
     <DebouncedTextField
       size="small"
-      label="Tolerance (%)"
+      label={labels.tolerance}
       type="number"
       inputProps={{ step: 0.1, min: 0, max: 100, inputMode: "decimal" }}
       value={net.tolerance ?? ""}
@@ -60,7 +60,7 @@ const NetDetailsForm = ({
     />
     <TextField
       size="small"
-      label="Phase"
+      label={labels.phase}
       select
       value={net.phase}
       onChange={(e) => onUpdateAttributes(net.id, { phase: Number(e.target.value) as 0 | 1 | 3 })}
@@ -78,7 +78,7 @@ const NetDetailsForm = ({
       disabled={edgeCount > 0}
       onClick={() => onDelete(net.id)}
     >
-      Delete Net {edgeCount > 0 ? `(in use: ${edgeCount})` : ""}
+      {labels.deleteNet(edgeCount)}
     </Button>
   </Stack>
 );

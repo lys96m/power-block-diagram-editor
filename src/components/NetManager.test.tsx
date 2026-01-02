@@ -9,7 +9,7 @@ import { getStrings } from "../i18n/strings";
 describe("NetManager", () => {
   const nets: Net[] = [{ id: "net-1", label: "N1", kind: "AC", voltage: 200, phase: 1 }];
   const noop = () => {};
-  const labels = getStrings().netManager;
+  const strings = getStrings();
 
   it("renders nets dropdown and buttons", () => {
     render(
@@ -24,7 +24,8 @@ describe("NetManager", () => {
         redoNetAction={() => true}
         canUndoNet
         canRedoNet
-        labels={labels}
+        labels={strings.netManager}
+        edgeLabels={strings.edge}
       />,
     );
 
