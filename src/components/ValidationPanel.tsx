@@ -25,6 +25,7 @@ type Props = {
   issues: ValidationResult[];
   labelLookup: Record<string, string>;
   labels: Strings["validation"];
+  counts: Strings["counts"];
 };
 
 type Level = ValidationResult["level"];
@@ -42,7 +43,7 @@ const levelMeta: Record<
   info: { color: "text.secondary", Icon: InfoOutlinedIcon, chipColor: "info" },
 };
 
-const ValidationPanel = ({ stats, issues, labelLookup, labels }: Props) => {
+const ValidationPanel = ({ stats, issues, labelLookup, labels, counts }: Props) => {
   const grouped = useMemo(
     () =>
       issues.reduce<Record<Level, ValidationResult[]>>(
@@ -75,29 +76,29 @@ const ValidationPanel = ({ stats, issues, labelLookup, labels }: Props) => {
           color="error"
           size="small"
           icon={<ErrorOutlineIcon fontSize="small" />}
-          label={`${labels.errors}: ${stats.errors}`}
+          label={`${counts.errors}: ${stats.errors}`}
           variant={stats.errors ? "filled" : "outlined"}
         />
         <Chip
           color="warning"
           size="small"
           icon={<WarningAmberIcon fontSize="small" />}
-          label={`${labels.warnings}: ${stats.warnings}`}
+          label={`${counts.warnings}: ${stats.warnings}`}
           variant={stats.warnings ? "filled" : "outlined"}
         />
         <Chip
           size="small"
           icon={<InfoOutlinedIcon fontSize="small" />}
-          label={`${labels.uncertainLoads}: ${stats.uncertainLoads}`}
+          label={`${counts.uncertainLoads}: ${stats.uncertainLoads}`}
           variant={stats.uncertainLoads ? "filled" : "outlined"}
         />
-        <Chip size="small" label={`${labels.nets}: ${stats.nets}`} variant="outlined" />
+        <Chip size="small" label={`${counts.nets}: ${stats.nets}`} variant="outlined" />
         <Chip
           size="small"
-          label={`${labels.unassignedEdges}: ${stats.unassignedEdges}`}
+          label={`${counts.unassignedEdges}: ${stats.unassignedEdges}`}
           variant="outlined"
         />
-        <Chip size="small" label={`${labels.orphanNets}: ${stats.orphanNets}`} variant="outlined" />
+        <Chip size="small" label={`${counts.orphanNets}: ${stats.orphanNets}`} variant="outlined" />
       </Stack>
 
       <Divider sx={{ my: 1.5 }} />
@@ -114,7 +115,7 @@ const ValidationPanel = ({ stats, issues, labelLookup, labels }: Props) => {
           const items = grouped[level];
           const { color, Icon, chipColor } = levelMeta[level];
           const sectionLabel =
-            level === "error" ? labels.errors : level === "warn" ? labels.warnings : labels.info;
+            level === "error" ? counts.errors : level === "warn" ? counts.warnings : labels.info;
           return (
             <Box key={level} mb={1} data-testid={`validation-section-${level}`}>
               <Button

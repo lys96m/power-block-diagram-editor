@@ -1,27 +1,24 @@
 export type SupportedLanguage = "en";
 
+type CountStrings = {
+  nets: string;
+  errors: string;
+  warnings: string;
+  unassignedEdges: string;
+  orphanNets: string;
+  uncertainLoads: string;
+};
+
 type ValidationStrings = {
   heading: string;
   noIssues: string;
-  errors: string;
-  warnings: string;
   info: string;
-  uncertainLoads: string;
-  nets: string;
-  unassignedEdges: string;
-  orphanNets: string;
   target: string;
   copied: string;
 };
 
 type StatusStrings = {
   ready: string;
-  nets: string;
-  errors: string;
-  warnings: string;
-  unassignedEdges: string;
-  orphanNets: string;
-  uncertainLoads: string;
 };
 
 type HeaderStrings = {
@@ -108,6 +105,7 @@ type ProjectDialogStrings = {
 };
 
 export type Strings = {
+  counts: CountStrings;
   validation: ValidationStrings;
   status: StatusStrings;
   header: HeaderStrings;
@@ -119,28 +117,26 @@ export type Strings = {
   projectDialog: ProjectDialogStrings;
 };
 
+const enCounts: CountStrings = {
+  nets: "Nets",
+  errors: "Errors",
+  warnings: "Warnings",
+  unassignedEdges: "Unassigned edges",
+  orphanNets: "Orphan nets",
+  uncertainLoads: "Uncertain loads",
+};
+
 const en: Strings = {
+  counts: enCounts,
   validation: {
     heading: "Validation",
     noIssues: "No validation issues.",
-    errors: "Errors",
-    warnings: "Warnings",
     info: "Info",
-    uncertainLoads: "Uncertain loads",
-    nets: "Nets",
-    unassignedEdges: "Unassigned edges",
-    orphanNets: "Orphan nets",
     target: "Target",
     copied: "copied",
   },
   status: {
     ready: "Status: Ready",
-    nets: "Nets",
-    errors: "Errors",
-    warnings: "Warnings",
-    unassignedEdges: "Unassigned edges",
-    orphanNets: "Orphan nets",
-    uncertainLoads: "Uncertain loads",
   },
   header: {
     title: "Power Block Diagram Editor",

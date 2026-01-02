@@ -8,7 +8,8 @@ import type { ValidationStats } from "../hooks/useValidationSummary";
 import { getStrings } from "../i18n/strings";
 
 describe("ValidationPanel", () => {
-  const labels = getStrings().validation;
+  const strings = getStrings();
+  const labels = strings.validation;
   const stats: ValidationStats = {
     errors: 1,
     warnings: 1,
@@ -31,6 +32,7 @@ describe("ValidationPanel", () => {
         issues={issues}
         labelLookup={{ n1: "Block A", n2: "Block B" }}
         labels={labels}
+        counts={strings.counts}
       />,
     );
 
@@ -44,7 +46,15 @@ describe("ValidationPanel", () => {
   });
 
   it("allows collapsing a level section", async () => {
-    render(<ValidationPanel stats={stats} issues={issues} labelLookup={{}} labels={labels} />);
+    render(
+      <ValidationPanel
+        stats={stats}
+        issues={issues}
+        labelLookup={{}}
+        labels={labels}
+        counts={strings.counts}
+      />,
+    );
     const warnToggle = screen.getAllByTestId("validation-toggle-warn")[0];
     const warnSection = screen.getAllByTestId("validation-section-warn")[0];
     fireEvent.click(warnToggle);
