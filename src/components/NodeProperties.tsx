@@ -6,6 +6,7 @@ import type { Node } from "reactflow";
 import type { BlockType, RatingA, RatingB, RatingC } from "../types/diagram";
 import { ensureTypeCRating, toNumberOrUndefined, toPhase } from "../lib/ratingHelpers";
 import type { NodeData } from "../hooks/useNodeEditing";
+import DebouncedTextField from "./DebouncedTextField";
 
 type Props = {
   selectedNode: Node | null;
@@ -39,11 +40,11 @@ const NodeProperties = ({
       <Typography variant="body2" fontWeight={600}>
         Node: {selectedNode.id}
       </Typography>
-      <TextField
+      <DebouncedTextField
         size="small"
         label="Label"
         value={data?.label ?? ""}
-        onChange={(e) => onLabelChange(e.target.value)}
+        onCommit={(value) => onLabelChange(value)}
       />
       <TextField
         size="small"
@@ -61,21 +62,21 @@ const NodeProperties = ({
 
       {data.type === "A" && (
         <Stack spacing={1}>
-          <TextField
+          <DebouncedTextField
             size="small"
             label="V_max (V)"
             type="number"
             inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
             value={(data.rating as RatingA | undefined)?.V_max ?? ""}
-            onChange={(e) => onTypeAChange("V_max", toNumberOrUndefined(e.target.value))}
+            onCommit={(val) => onTypeAChange("V_max", toNumberOrUndefined(val))}
           />
-          <TextField
+          <DebouncedTextField
             size="small"
             label="I_max (A)"
             type="number"
             inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
             value={(data.rating as RatingA | undefined)?.I_max ?? ""}
-            onChange={(e) => onTypeAChange("I_max", toNumberOrUndefined(e.target.value))}
+            onCommit={(val) => onTypeAChange("I_max", toNumberOrUndefined(val))}
           />
           <TextField
             size="small"
@@ -95,29 +96,29 @@ const NodeProperties = ({
 
       {data.type === "B" && (
         <Stack spacing={1}>
-          <TextField
+          <DebouncedTextField
             size="small"
             label="V_in (V)"
             type="number"
             inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
             value={(data.rating as RatingB | undefined)?.V_in ?? ""}
-            onChange={(e) => onTypeBChange("V_in", toNumberOrUndefined(e.target.value))}
+            onCommit={(val) => onTypeBChange("V_in", toNumberOrUndefined(val))}
           />
-          <TextField
+          <DebouncedTextField
             size="small"
             label="I_in (A)"
             type="number"
             inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
             value={(data.rating as RatingB | undefined)?.I_in ?? ""}
-            onChange={(e) => onTypeBChange("I_in", toNumberOrUndefined(e.target.value))}
+            onCommit={(val) => onTypeBChange("I_in", toNumberOrUndefined(val))}
           />
-          <TextField
+          <DebouncedTextField
             size="small"
             label="P_in (W)"
             type="number"
             inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
             value={(data.rating as RatingB | undefined)?.P_in ?? ""}
-            onChange={(e) => onTypeBChange("P_in", toNumberOrUndefined(e.target.value))}
+            onCommit={(val) => onTypeBChange("P_in", toNumberOrUndefined(val))}
           />
           <TextField
             size="small"
@@ -143,33 +144,29 @@ const NodeProperties = ({
               <Typography variant="body2" fontWeight={600}>
                 Input
               </Typography>
-              <TextField
+              <DebouncedTextField
                 size="small"
                 label="V_in (V)"
                 type="number"
                 inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
                 value={rating.in.V_in ?? ""}
-                onChange={(e) => onTypeCChange("in", "V_in", toNumberOrUndefined(e.target.value))}
+                onCommit={(val) => onTypeCChange("in", "V_in", toNumberOrUndefined(val))}
               />
-              <TextField
+              <DebouncedTextField
                 size="small"
                 label="I_in_max (A)"
                 type="number"
                 inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
                 value={rating.in.I_in_max ?? ""}
-                onChange={(e) =>
-                  onTypeCChange("in", "I_in_max", toNumberOrUndefined(e.target.value))
-                }
+                onCommit={(val) => onTypeCChange("in", "I_in_max", toNumberOrUndefined(val))}
               />
-              <TextField
+              <DebouncedTextField
                 size="small"
                 label="P_in_max (W)"
                 type="number"
                 inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
                 value={rating.in.P_in_max ?? ""}
-                onChange={(e) =>
-                  onTypeCChange("in", "P_in_max", toNumberOrUndefined(e.target.value))
-                }
+                onCommit={(val) => onTypeCChange("in", "P_in_max", toNumberOrUndefined(val))}
               />
               <TextField
                 size="small"
@@ -188,33 +185,29 @@ const NodeProperties = ({
               <Typography variant="body2" fontWeight={600}>
                 Output
               </Typography>
-              <TextField
+              <DebouncedTextField
                 size="small"
                 label="V_out (V)"
                 type="number"
                 inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
                 value={rating.out.V_out ?? ""}
-                onChange={(e) => onTypeCChange("out", "V_out", toNumberOrUndefined(e.target.value))}
+                onCommit={(val) => onTypeCChange("out", "V_out", toNumberOrUndefined(val))}
               />
-              <TextField
+              <DebouncedTextField
                 size="small"
                 label="I_out_max (A)"
                 type="number"
                 inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
                 value={rating.out.I_out_max ?? ""}
-                onChange={(e) =>
-                  onTypeCChange("out", "I_out_max", toNumberOrUndefined(e.target.value))
-                }
+                onCommit={(val) => onTypeCChange("out", "I_out_max", toNumberOrUndefined(val))}
               />
-              <TextField
+              <DebouncedTextField
                 size="small"
                 label="P_out_max (W)"
                 type="number"
                 inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
                 value={rating.out.P_out_max ?? ""}
-                onChange={(e) =>
-                  onTypeCChange("out", "P_out_max", toNumberOrUndefined(e.target.value))
-                }
+                onCommit={(val) => onTypeCChange("out", "P_out_max", toNumberOrUndefined(val))}
               />
               <TextField
                 size="small"
@@ -233,13 +226,13 @@ const NodeProperties = ({
               <Typography variant="body2" fontWeight={600}>
                 Efficiency
               </Typography>
-              <TextField
+              <DebouncedTextField
                 size="small"
                 label="eta (0-1)"
                 type="number"
                 inputProps={{ step: 0.01, min: 0, max: 1, inputMode: "decimal" }}
                 value={rating.eta ?? ""}
-                onChange={(e) => onTypeCChange("eta", "eta", toNumberOrUndefined(e.target.value))}
+                onCommit={(val) => onTypeCChange("eta", "eta", toNumberOrUndefined(val))}
               />
             </Stack>
           );
