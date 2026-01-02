@@ -4,6 +4,7 @@ import { createEmptyProject, parseProject, serializeProject } from "../services/
 import type { Block, BlockType, Net, Project, RatingA, RatingB, RatingC } from "../types/diagram";
 import { defaultRatings, ensureTypeCRating } from "../lib/ratingHelpers";
 import type { ProjectDialogMode } from "../components/ProjectDialog";
+import type { AlertColor } from "@mui/material/Alert";
 
 type NodeData = { type?: BlockType; label?: string; rating?: Block["rating"] };
 
@@ -123,8 +124,10 @@ export const useProjectIO = ({
     text: string;
     error?: string;
   }>({ mode: null, text: "" });
+  const [toast, setToast] = useState<{ message: string; severity: AlertColor } | null>(null);
 
   const closeDialog = () => setDialogState({ mode: null, text: "", error: undefined });
+  const clearToast = () => setToast(null);
 
   const openNewProject = () => {
     const emptyProject = createEmptyProject();
@@ -132,6 +135,7 @@ export const useProjectIO = ({
     replaceDiagram(nextNodes, nextEdges, nextNets);
     resetSelection();
     closeDialog();
+    setToast({ severity: "success", message: "新しいプロジェクトを開始しました。" });
   };
 
   const openDialog = () => setDialogState({ mode: "open", text: "", error: undefined });
@@ -148,16 +152,24 @@ export const useProjectIO = ({
       replaceDiagram(nextNodes, nextEdges, nextNets);
       resetSelection();
       closeDialog();
+      setToast({ severity: "success", message: "プロジェクトを読み込みました。" });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load project";
       setDialogState((prev) => ({ ...prev, error: message }));
+      setToast({ severity: "error", message: `読み込みに失敗しました: ${message}` });
     }
   };
 
   const copyDialogText = () => {
-    if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(dialogState.text);
+    if (!navigator?.clipboard?.writeText) {
+      setToast({ severity: "error", message: "クリップボードへのコピーをサポートしていません。" });
+      return;
     }
+
+    navigator.clipboard
+      .writeText(dialogState.text)
+      .then(() => setToast({ severity: "success", message: "JSON をコピーしました。" }))
+      .catch(() => setToast({ severity: "error", message: "コピーに失敗しました。" }));
   };
 
   return {
@@ -169,6 +181,8 @@ export const useProjectIO = ({
     openSaveOrExport,
     applyOpenProject,
     copyDialogText,
+    toast,
+    clearToast,
   };
 };
 
