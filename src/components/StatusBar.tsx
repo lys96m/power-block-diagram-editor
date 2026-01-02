@@ -8,6 +8,15 @@ type Props = {
   unassignedEdges: number;
   uncertainLoads: number;
   orphanNets: number;
+  labels: {
+    ready: string;
+    nets: string;
+    errors: string;
+    warnings: string;
+    unassignedEdges: string;
+    orphanNets: string;
+    uncertainLoads: string;
+  };
 };
 
 export const StatusBar = ({
@@ -17,12 +26,14 @@ export const StatusBar = ({
   unassignedEdges,
   uncertainLoads,
   orphanNets,
+  labels,
 }: Props) => (
   <Box className="status-bar">
-    <Typography variant="body2">Status: Ready</Typography>
+    <Typography variant="body2">{labels.ready}</Typography>
     <Typography variant="body2" color="text.secondary">
-      Nets: {nets} | Errors: {errors} | Warnings: {warnings} | Unassigned edges: {unassignedEdges} |
-      Orphan nets: {orphanNets} | Uncertain loads: {uncertainLoads}
+      {labels.nets}: {nets} | {labels.errors}: {errors} | {labels.warnings}: {warnings} |{" "}
+      {labels.unassignedEdges}: {unassignedEdges} | {labels.orphanNets}: {orphanNets} |{" "}
+      {labels.uncertainLoads}: {uncertainLoads}
     </Typography>
   </Box>
 );
