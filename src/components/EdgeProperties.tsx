@@ -6,6 +6,7 @@ import Typography from "@mui/material/Typography";
 import type { Edge } from "reactflow";
 import type { Net } from "../types/diagram";
 import { toNumberOrUndefined } from "../lib/ratingHelpers";
+import DebouncedTextField from "./DebouncedTextField";
 
 type Props = {
   selectedEdge: Edge | null;
@@ -62,33 +63,33 @@ const EdgeProperties = ({
 
       {currentNet && (
         <Stack spacing={1}>
-          <TextField
+          <DebouncedTextField
             size="small"
             label="Net Name"
             value={currentNet.label}
-            onChange={(e) => onRenameNet(currentNet.id, e.target.value)}
+            onCommit={(val) => onRenameNet(currentNet.id, val)}
           />
-          <TextField
+          <DebouncedTextField
             size="small"
             label="Voltage (V)"
             type="number"
             inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
             value={currentNet.voltage}
-            onChange={(e) =>
+            onCommit={(val) =>
               onUpdateNetAttributes(currentNet.id, {
-                voltage: toNumberOrUndefined(e.target.value),
+                voltage: toNumberOrUndefined(val),
               })
             }
           />
-          <TextField
+          <DebouncedTextField
             size="small"
             label="Tolerance (%)"
             type="number"
             inputProps={{ step: 0.1, min: 0, max: 100, inputMode: "decimal" }}
             value={currentNet.tolerance ?? ""}
-            onChange={(e) =>
+            onCommit={(val) =>
               onUpdateNetAttributes(currentNet.id, {
-                tolerance: toNumberOrUndefined(e.target.value),
+                tolerance: toNumberOrUndefined(val),
               })
             }
           />

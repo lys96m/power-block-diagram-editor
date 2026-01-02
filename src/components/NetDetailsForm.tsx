@@ -4,6 +4,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import type { Net } from "../types/diagram";
 import { toNumberOrUndefined } from "../lib/ratingHelpers";
+import DebouncedTextField from "./DebouncedTextField";
 
 type Props = {
   net: Net;
@@ -15,11 +16,11 @@ type Props = {
 
 const NetDetailsForm = ({ net, edgeCount, onRename, onUpdateAttributes, onDelete }: Props) => (
   <Stack spacing={1}>
-    <TextField
+    <DebouncedTextField
       size="small"
       label="Name"
       value={net.label}
-      onChange={(e) => onRename(net.id, e.target.value)}
+      onCommit={(val) => onRename(net.id, val)}
     />
     <TextField
       size="small"
@@ -32,23 +33,21 @@ const NetDetailsForm = ({ net, edgeCount, onRename, onUpdateAttributes, onDelete
       <MenuItem value="DC">DC</MenuItem>
       <MenuItem value="SIGNAL">SIGNAL</MenuItem>
     </TextField>
-    <TextField
+    <DebouncedTextField
       size="small"
       label="Voltage (V)"
       type="number"
       inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
       value={net.voltage}
-      onChange={(e) => onUpdateAttributes(net.id, { voltage: toNumberOrUndefined(e.target.value) })}
+      onCommit={(val) => onUpdateAttributes(net.id, { voltage: toNumberOrUndefined(val) })}
     />
-    <TextField
+    <DebouncedTextField
       size="small"
       label="Tolerance (%)"
       type="number"
       inputProps={{ step: 0.1, min: 0, max: 100, inputMode: "decimal" }}
       value={net.tolerance ?? ""}
-      onChange={(e) =>
-        onUpdateAttributes(net.id, { tolerance: toNumberOrUndefined(e.target.value) })
-      }
+      onCommit={(val) => onUpdateAttributes(net.id, { tolerance: toNumberOrUndefined(val) })}
     />
     <TextField
       size="small"
