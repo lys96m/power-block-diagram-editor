@@ -6,6 +6,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import type { Strings } from "../i18n/strings";
 
 export type ProjectDialogMode = "open" | "save" | "export" | null;
 
@@ -17,6 +18,7 @@ type Props = {
   onClose: () => void;
   onLoad: () => void;
   onCopy: () => void;
+  labels: Strings["projectDialog"];
 };
 
 export const ProjectDialog = ({
@@ -27,13 +29,10 @@ export const ProjectDialog = ({
   onClose,
   onLoad,
   onCopy,
+  labels,
 }: Props) => {
   const title =
-    mode === "open"
-      ? "Open project (JSON)"
-      : mode === "save"
-        ? "Save project (JSON copy)"
-        : "Export project (JSON copy)";
+    mode === "open" ? labels.openTitle : mode === "save" ? labels.saveTitle : labels.exportTitle;
 
   return (
     <Dialog open={mode !== null} onClose={onClose} fullWidth maxWidth="sm">
@@ -41,11 +40,11 @@ export const ProjectDialog = ({
       <DialogContent dividers>
         {mode === "open" ? (
           <Typography variant="body2" gutterBottom>
-            project.json を貼り付けて「Load」を押してください。
+            {labels.openHint}
           </Typography>
         ) : (
           <Typography variant="body2" gutterBottom>
-            JSON をコピーして保存してください（ダウンロードは未実装）。
+            {labels.copyHint}
           </Typography>
         )}
         <TextField
@@ -63,19 +62,19 @@ export const ProjectDialog = ({
         )}
         {mode === "export" && !error && (
           <Alert severity="info" sx={{ mt: 2 }}>
-            Export (JSON コピー) のみ対応中。ダウンロードは後続対応。
+            {labels.exportInfo}
           </Alert>
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose}>{labels.close}</Button>
         {mode === "open" ? (
           <Button variant="contained" onClick={onLoad}>
-            Load
+            {labels.load}
           </Button>
         ) : (
           <Button variant="contained" onClick={onCopy}>
-            Copy JSON
+            {labels.copy}
           </Button>
         )}
       </DialogActions>

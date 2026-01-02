@@ -5,6 +5,7 @@ import type { Edge, Node } from "reactflow";
 import type { BlockType, Net, RatingA, RatingB, RatingC } from "../types/diagram";
 import NodeProperties from "./NodeProperties";
 import EdgeProperties from "./EdgeProperties";
+import type { Strings } from "../i18n/strings";
 
 type Props = {
   selectedNode: Node | null;
@@ -27,6 +28,12 @@ type Props = {
   onUpdateNetAttributes: (netId: string, updates: Partial<Net>) => void;
   onDeleteNet: (netId: string) => boolean;
   onDeleteSelected: () => void;
+  labels: {
+    properties: Strings["properties"];
+    node: Strings["node"];
+    edge: Strings["edge"];
+    netManager: Strings["netManager"];
+  };
 };
 
 export const PropertiesPanel = ({
@@ -46,6 +53,7 @@ export const PropertiesPanel = ({
   onUpdateNetAttributes,
   onDeleteNet,
   onDeleteSelected,
+  labels,
 }: Props) => (
   <Stack spacing={1} mt={2}>
     <NodeProperties
@@ -56,6 +64,7 @@ export const PropertiesPanel = ({
       onTypeAChange={onTypeAChange}
       onTypeBChange={onTypeBChange}
       onTypeCChange={onTypeCChange}
+      labels={labels.node}
     />
 
     <EdgeProperties
@@ -67,16 +76,17 @@ export const PropertiesPanel = ({
       onRenameNet={onRenameNet}
       onUpdateNetAttributes={onUpdateNetAttributes}
       onDeleteNet={onDeleteNet}
+      labels={labels.edge}
     />
 
     {!selectedNode && !selectedEdge && (
       <Typography variant="body2" color="text.secondary">
-        Nothing selected
+        {labels.properties.nothingSelected}
       </Typography>
     )}
     {(selectedNode || selectedEdge) && (
       <Button variant="outlined" color="error" size="small" onClick={onDeleteSelected}>
-        Delete Selected
+        {labels.properties.deleteSelected}
       </Button>
     )}
   </Stack>

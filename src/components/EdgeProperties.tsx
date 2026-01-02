@@ -7,6 +7,7 @@ import type { Edge } from "reactflow";
 import type { Net } from "../types/diagram";
 import { toNumberOrUndefined } from "../lib/ratingHelpers";
 import DebouncedTextField from "./DebouncedTextField";
+import type { Strings } from "../i18n/strings";
 
 type Props = {
   selectedEdge: Edge | null;
@@ -17,6 +18,7 @@ type Props = {
   onRenameNet: (netId: string, label: string) => void;
   onUpdateNetAttributes: (netId: string, updates: Partial<Net>) => void;
   onDeleteNet: (netId: string) => boolean;
+  labels: Strings["edge"];
 };
 
 const EdgeProperties = ({
@@ -28,6 +30,7 @@ const EdgeProperties = ({
   onRenameNet,
   onUpdateNetAttributes,
   onDeleteNet,
+  labels,
 }: Props) => {
   if (!selectedEdge) return null;
 
@@ -38,7 +41,7 @@ const EdgeProperties = ({
   return (
     <>
       <Typography variant="body2" fontWeight={600}>
-        Edge: {selectedEdge.id}
+        {labels.edgeLabelPrefix} {selectedEdge.id}
       </Typography>
       <Typography variant="body2" color="text.secondary">
         {selectedEdge.source} → {selectedEdge.target}
@@ -46,14 +49,14 @@ const EdgeProperties = ({
 
       <TextField
         size="small"
-        label="Net"
+        label={labels.net}
         select
         value={currentNetId}
         onChange={(e) =>
           onEdgeNetChange(selectedEdge.id, e.target.value === "" ? null : e.target.value)
         }
       >
-        <MenuItem value="">Unassigned</MenuItem>
+        <MenuItem value="">{labels.unassigned}</MenuItem>
         {nets.map((net) => (
           <MenuItem key={net.id} value={net.id}>
             {net.label}
@@ -65,13 +68,13 @@ const EdgeProperties = ({
         <Stack spacing={1}>
           <DebouncedTextField
             size="small"
-            label="Net Name"
+            label={labels.netName}
             value={currentNet.label}
             onCommit={(val) => onRenameNet(currentNet.id, val)}
           />
           <DebouncedTextField
             size="small"
-            label="Voltage (V)"
+            label={labels.voltage}
             type="number"
             inputProps={{ step: 0.01, min: 0, inputMode: "decimal" }}
             value={currentNet.voltage}
@@ -83,7 +86,7 @@ const EdgeProperties = ({
           />
           <DebouncedTextField
             size="small"
-            label="Tolerance (%)"
+            label={labels.tolerance}
             type="number"
             inputProps={{ step: 0.1, min: 0, max: 100, inputMode: "decimal" }}
             value={currentNet.tolerance ?? ""}
@@ -95,7 +98,7 @@ const EdgeProperties = ({
           />
           <TextField
             size="small"
-            label="Phase"
+            label={labels.phase}
             select
             value={currentNet.phase}
             onChange={(e) =>
@@ -112,7 +115,7 @@ const EdgeProperties = ({
           </TextField>
           <TextField
             size="small"
-            label="Kind"
+            label={labels.kind}
             select
             value={currentNet.kind}
             onChange={(e) =>
@@ -131,7 +134,7 @@ const EdgeProperties = ({
             onClick={() => onCreateNet(selectedEdge.id)}
             sx={{ alignSelf: "flex-start" }}
           >
-            Add Net
+            {labels.addNet}
           </Button>
           <Button
             variant="outlined"
@@ -141,7 +144,7 @@ const EdgeProperties = ({
             onClick={() => onDeleteNet(currentNet.id)}
             sx={{ alignSelf: "flex-start" }}
           >
-            Delete Net {inUseCount > 0 ? `(in use: ${inUseCount})` : ""}
+            {labels.deleteNet(inUseCount)}
           </Button>
         </Stack>
       )}
@@ -153,7 +156,7 @@ const EdgeProperties = ({
           onClick={() => onCreateNet(selectedEdge.id)}
           sx={{ alignSelf: "flex-start" }}
         >
-          Add Net
+          {labels.addNet}
         </Button>
       )}
     </>

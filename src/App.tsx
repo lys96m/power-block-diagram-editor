@@ -113,23 +113,42 @@ function App() {
         onOpen={openDialog}
         onSave={() => openSaveOrExport("save")}
         onExport={() => openSaveOrExport("export")}
+        labels={strings.header}
       />
 
       <Box className="app-body">
         <Box className="panel left-panel">
           <Typography variant="subtitle1" fontWeight={600}>
-            Palette
+            {strings.app.paletteTitle}
           </Typography>
           <Divider />
           <Stack spacing={1} mt={2}>
-            <Button variant="contained" size="small" fullWidth onClick={() => addNode("A")}>
-              Add {typeLabels.A}
+            <Button
+              variant="contained"
+              size="small"
+              fullWidth
+              onClick={() => addNode("A")}
+              aria-label={`${strings.app.add} ${typeLabels.A}`}
+            >
+              {strings.app.add} {typeLabels.A}
             </Button>
-            <Button variant="contained" size="small" fullWidth onClick={() => addNode("B")}>
-              Add {typeLabels.B}
+            <Button
+              variant="contained"
+              size="small"
+              fullWidth
+              onClick={() => addNode("B")}
+              aria-label={`${strings.app.add} ${typeLabels.B}`}
+            >
+              {strings.app.add} {typeLabels.B}
             </Button>
-            <Button variant="contained" size="small" fullWidth onClick={() => addNode("C")}>
-              Add {typeLabels.C}
+            <Button
+              variant="contained"
+              size="small"
+              fullWidth
+              onClick={() => addNode("C")}
+              aria-label={`${strings.app.add} ${typeLabels.C}`}
+            >
+              {strings.app.add} {typeLabels.C}
             </Button>
           </Stack>
         </Box>
@@ -149,7 +168,7 @@ function App() {
 
         <Box className="panel right-panel">
           <Typography variant="subtitle1" fontWeight={600}>
-            Properties
+            {strings.app.propertiesTitle}
           </Typography>
           <Divider />
           <PropertiesPanel
@@ -172,6 +191,12 @@ function App() {
             onUpdateNetAttributes={updateNetAttributes}
             onDeleteNet={removeNet}
             onDeleteSelected={handleDeleteSelected}
+            labels={{
+              properties: strings.properties,
+              node: strings.node,
+              edge: strings.edge,
+              netManager: strings.netManager,
+            }}
           />
 
           <Divider sx={{ my: 2 }} />
@@ -186,6 +211,7 @@ function App() {
             redoNetAction={redoNetAction}
             canUndoNet={canUndoNet}
             canRedoNet={canRedoNet}
+            labels={strings.netManager}
           />
 
           <Divider sx={{ my: 2 }} />
@@ -216,6 +242,7 @@ function App() {
         onClose={closeDialog}
         onLoad={applyOpenProject}
         onCopy={copyDialogText}
+        labels={strings.projectDialog}
       />
       <Snackbar
         open={!!toast}
